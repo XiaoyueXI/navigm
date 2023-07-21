@@ -200,6 +200,53 @@ get_sum_var_alpha <- function(sig2_inv_zeta, m1_beta, m2_beta, V, pV, p){
 ####################
 
 
+get_omega <- function(E1, S, Omega, lambda, n, p) {
+  for (j in 1:p) {
+    IOmega_nj_nj <-
+      solve(Omega[-j, -j, drop = FALSE]) # implement update based on Sigma to avoid inverting here.
 
+    s_j_j <- S[j, j]
+
+    Omega[-j, j] <-
+      Omega[j, -j] <-
+      -solve((s_j_j + lambda) * IOmega_nj_nj + diag(E1[-j, j]), S[-j, j])
+    Omega[j, j] <-
+      Omega[j, -j, drop = FALSE] %*% IOmega_nj_nj %*% Omega[-j, j] + n / (lambda + s_j_j)
+
+  }
+
+  Omega
+
+}
+
+
+get_E1 <- function(P, v0, v1) {
+    ans <- (1 - P) / v0 ^ 2 + P / v1 ^ 2
+    return(ans)
+}
+
+get_E2 <- function(P, Alpha, c = 1) {
+  sqrt_c <- sqrt(c)
+  log_pnorm <- pnorm(sqrt_c * Alpha, log.p = TRUE)
+  log_1_pnorm <-
+    pnorm(sqrt_c * Alpha, log.p = TRUE, lower.tail = FALSE)
+
+  imr0 <-
+    inv_mills_ratio_(0, sqrt_c * Alpha, log_1_pnorm, log_pnorm)
+  imr1 <-
+    inv_mills_ratio_(1, sqrt_c * Alpha, log_1_pnorm, log_pnorm)
+
+  E2 <- Alpha  + imr0 / sqrt_c + P * (imr1 - imr0) / sqrt_c
+
+  diag(E2) <- 0
+
+  return(E2)
+}
+
+
+get_E2_2 <- function(E2, Alpha, cst = 1) {
+    Alpha * E2 + 1 / cst
+
+}
 
 

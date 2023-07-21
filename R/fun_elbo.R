@@ -180,7 +180,7 @@ e_sigma <- function(alpha_sigma,
 
 #######################################
 
-get_elbo_select_av <- function(Omega,
+get_elbo_gmss_vbem <- function(Omega,
                                m_delta,
                                alpha_tau,
                                beta_tau,
