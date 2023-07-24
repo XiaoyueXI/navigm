@@ -137,17 +137,17 @@ gm_em_core <-  function(Y,
 
   if(version == 1){
 
-  if (!'rho' %in% names(list_init) | ('rho' %in% names(list_init) & is.null(list_init$rho))) {
+    if (!'rho' %in% names(list_init) | ('rho' %in% names(list_init) & is.null(list_init$rho))) {
 
-    rho <- 1 / P
+      rho <- 1 / P
 
-  }else{
+    }else{
 
-    if( rho < 0 | rho > 1){
-      stop("rho must be in [0,1].")
+      if( rho < 0 | rho > 1){
+        stop("rho must be in [0,1].")
+      }
+
     }
-
-  }
 
   }else if(version == 2){
 
@@ -244,20 +244,20 @@ gm_em_core <-  function(Y,
 
         if(version == 1){
           ELBO0 <-  get_elbo_gm_em_v1(Omega,
-                                        rho,
-                                        tau1,
-                                        P1,
-                                        E1,
-                                        S,
-                                        lambda,
-                                        v0,
-                                        v1,
-                                        a_rho,
-                                        b_rho,
-                                        a_tau,
-                                        b_tau,
-                                        N,
-                                        P)
+                                      rho,
+                                      tau1,
+                                      P1,
+                                      E1,
+                                      S,
+                                      lambda,
+                                      v0,
+                                      v1,
+                                      a_rho,
+                                      b_rho,
+                                      a_tau,
+                                      b_tau,
+                                      N,
+                                      P)
         }else if(version == 2){
 
           ELBO0 <- get_elbo_gm_em_v2(Omega,
@@ -285,7 +285,12 @@ gm_em_core <-  function(Y,
     # save order as VBEM
     #
     tau1 <- get_tau1(Omega, E1, a_tau, b_tau, P)
-    rho <- get_rho(P1, a_rho, b_rho)
+    if(version == 1){
+      rho <- get_rho(P1, a_rho, b_rho)
+    }else if (version == 2){
+      zeta <- get_zeta(E2, theta, n0, t02, P)
+    }
+
 
     # omega
     #
@@ -310,20 +315,20 @@ gm_em_core <-  function(Y,
     if (isTRUE(all.equal(c, 1))) {
       if(version == 1){
         ELBO <-  get_elbo_gm_em_v1(Omega,
-                                      rho,
-                                      tau1,
-                                      P1,
-                                      E1,
-                                      S,
-                                      lambda,
-                                      v0,
-                                      v1,
-                                      a_rho,
-                                      b_rho,
-                                      a_tau,
-                                      b_tau,
-                                      N,
-                                      P)
+                                   rho,
+                                   tau1,
+                                   P1,
+                                   E1,
+                                   S,
+                                   lambda,
+                                   v0,
+                                   v1,
+                                   a_rho,
+                                   b_rho,
+                                   a_tau,
+                                   b_tau,
+                                   N,
+                                   P)
       }else if(version == 2){
         ELBO <- get_elbo_gm_em_v2(Omega,
                                   zeta,
@@ -385,24 +390,25 @@ gm_em_core <-  function(Y,
 
   if (version ==1){
 
-    estimates <- list(Omega,
-                      rho,
-                      tau1,
-                      P1,
-                      E1
+    estimates <- list(Omega = Omega,
+                      rho = rho,
+                      tau1 = tau1,
+                      P1 = P1,
+                      E1 = E1,
+                      S =S # for model comparison
     )
 
   }else if(version == 2){
 
-    estimates <- list(Omega,
-                      zeta,
-                      tau1,
-                      P1,
-                      E1,
-                      E2,
-                      E2_2
+    estimates <- list(Omega = Omega,
+                      zeta = zeta,
+                      tau1 = tau1,
+                      P1 = P1,
+                      E1 = E1,
+                      E2 = E2,
+                      E2_2 = E2_2,
+                      S = S # for model comparison
     )
-
   }
 
 

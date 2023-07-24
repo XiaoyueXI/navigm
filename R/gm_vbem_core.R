@@ -610,30 +610,34 @@ gm_vbem_core  <- function(Y,
 
   if (version ==1){
 
-    estimates <- list( Omega,
-                       m_delta,
-                       alpha_tau,
-                       beta_tau,
-                       alpha_rho,
-                       beta_rho)
+    estimates <- list( Omega = Omega,
+                       m_delta = m_delta,
+                       alpha_tau = alpha_tau,
+                       beta_tau = beta_tau,
+                       alpha_rho = alpha_rho,
+                       beta_rho =  beta_rho,
+                       S = S # for model comparison
+    )
 
   }else if(version == 2){
 
-    estimates <- list( Omega,
-                       m_delta,
-                       alpha_tau,
-                       beta_tau,
-                       mu_zeta,
-                       sig2_inv_zeta)
+    estimates <- list( Omega = Omega,
+                       m_delta = m_delta,
+                       alpha_tau = alpha_tau,
+                       beta_tau = beta_tau,
+                       mu_zeta = mu_zeta,
+                       sig2_inv_zeta = sig2_inv_zeta,
+                       S = S # for model comparison
+    )
 
   }
 
 
   if(debug){
 
-    debugs <- list( n_warning,
-                    vec_n_warning_VB,
-                    list_ELBO)
+    debugs <- list( n_warning = n_warning,
+                    vec_n_warning_VB = vec_n_warning_VB,
+                    list_ELBO = list_ELBO)
 
   }else{
 

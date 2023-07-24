@@ -3,12 +3,12 @@
 
 
 navigss_em_core <- function(Y, V =NULL,
-                              method = 'GMSS',
-                              list_hyper = NULL, list_init = NULL,
-                              tol = 0.1, maxit = 1000,
-                              verbose = T,
-                              track_ELBO = F, debug = F,
-                              version = NULL) {
+                            method = 'GMSS',
+                            list_hyper = NULL, list_init = NULL,
+                            tol = 0.1, maxit = 1000,
+                            verbose = T,
+                            track_ELBO = F, debug = F,
+                            version = NULL) {
 
 
   if(method == 'GM'){
@@ -20,14 +20,14 @@ navigss_em_core <- function(Y, V =NULL,
                "======================================== \n\n"))
 
     ans <- gm_em_core(Y,
-                                list_hyper = list_hyper,
-                                list_init =  list_init,
-                                tol = tol,
-                                maxit = maxit,
-                                verbose = verbose,
-                                track_ELBO = track_ELBO,
-                                debug = debug,
-                                version = version)
+                      list_hyper = list_hyper,
+                      list_init =  list_init,
+                      tol = tol,
+                      maxit = maxit,
+                      verbose = verbose,
+                      track_ELBO = track_ELBO,
+                      debug = debug,
+                      version = version)
 
   }else if(method == 'GMN'){
 
@@ -39,14 +39,14 @@ navigss_em_core <- function(Y, V =NULL,
                "============================================================================================================== \n\n"))
 
     ans <- gmn_em_core(Y,
-                                 V,
-                                 list_hyper = list_hyper,
-                                 list_init =  list_init,
-                                 tol = tol,
-                                 maxit = maxit,
-                                 verbose = verbose,
-                                 track_ELBO = track_ELBO,
-                                 debug = debug)
+                       V,
+                       list_hyper = list_hyper,
+                       list_init =  list_init,
+                       tol = tol,
+                       maxit = maxit,
+                       verbose = verbose,
+                       track_ELBO = track_ELBO,
+                       debug = debug)
 
 
   }else if(method == 'GMSS'){
@@ -59,14 +59,14 @@ navigss_em_core <- function(Y, V =NULL,
                "====================================================================================================================== \n\n"))
 
     ans <- gmss_em_core(Y,
-                                  V,
-                                  list_hyper = list_hyper,
-                                  list_init =  list_init,
-                                  tol = tol,
-                                  maxit = maxit,
-                                  verbose = verbose,
-                                  track_ELBO = track_ELBO,
-                                  debug = debug)
+                        V,
+                        list_hyper = list_hyper,
+                        list_init =  list_init,
+                        tol = tol,
+                        maxit = maxit,
+                        verbose = verbose,
+                        track_ELBO = track_ELBO,
+                        debug = debug)
 
   }
 

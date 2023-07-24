@@ -101,7 +101,7 @@ get_E2_2 <- function(E2, Alpha, cst = 1) {
 
 get_E5 <- function(P2, s0, s1) {
 
-    (1 - P2) / s0 ^ 2 + P2 / s1 ^ 2
+  (1 - P2) / s0 ^ 2 + P2 / s1 ^ 2
 
 }
 
@@ -113,7 +113,7 @@ get_E5 <- function(P2, s0, s1) {
 
 get_o <- function(P2, a_o, b_o) {
 
-    (sum(P2) + a_o - 1) / (length(P2) + a_o + b_o - 2)
+  (sum(P2) + a_o - 1) / (length(P2) + a_o + b_o - 2)
 
 }
 
@@ -129,40 +129,40 @@ get_tau1 <- function(Omega, E1, a_tau, b_tau, P) {
 
 get_tau2 <- function(beta, E5, a_sigma, b_sigma, Q) {
 
-    (2 * a_sigma - 2 + Q) / (sum(beta ^ 2 * E5) + 2 * b_sigma)
+  (2 * a_sigma - 2 + Q) / (sum(beta ^ 2 * E5) + 2 * b_sigma)
 
 }
 
 
 get_zeta <- function(E2, theta, n0, t02, P) {
 
-    (2 * n0 + 2 * t02 * sum(E2[upper.tri(E2)]) - 2 * t02 * (P - 1) * sum(theta)) / (t02 * P * (P - 1) + 2)
+  (2 * n0 + 2 * t02 * sum(E2[upper.tri(E2)]) - 2 * t02 * (P - 1) * sum(theta)) / (t02 * P * (P - 1) + 2)
 
 }
 
 
 get_beta <- function(beta,
-                    zeta,
-                    tau2,
-                    E2,
-                    E5,
-                    sV,
-                    pV,
-                    spV1,
-                    spV2,
-                    P,
-                    Q) {
+                     zeta,
+                     tau2,
+                     E2,
+                     E5,
+                     sV,
+                     pV,
+                     spV1,
+                     spV2,
+                     P,
+                     Q) {
 
 
-    (sapply(sV, function(x)
-        sum(x[upper.tri(x, diag = T)] * E2[upper.tri(E2)])) -
-        (P - 1) *  zeta * apply(V, 2, sum) -
-        (P - 1) *  sapply(1:Q, function(x)
-          sum(spV1[[x]] * beta[-x])) -
-        sapply(1:Q, function(x)
-          sum(spV2[[x]] * beta[-x]))) /
-      ((P - 1) *  apply(V ^ 2, 2, sum) + 2 * sapply(pV, function(x)
-        sum(x[upper.tri(x, diag = T)])) + tau2 * E5)
+  (sapply(sV, function(x)
+    sum(x[upper.tri(x, diag = T)] * E2[upper.tri(E2)])) -
+     (P - 1) *  zeta * apply(V, 2, sum) -
+     (P - 1) *  sapply(1:Q, function(x)
+       sum(spV1[[x]] * beta[-x])) -
+     sapply(1:Q, function(x)
+       sum(spV2[[x]] * beta[-x]))) /
+    ((P - 1) *  apply(V ^ 2, 2, sum) + 2 * sapply(pV, function(x)
+      sum(x[upper.tri(x, diag = T)])) + tau2 * E5)
 
 }
 
@@ -182,15 +182,15 @@ get_tau2_gmn <- function(beta, a_sigma, b_sigma, Q) {
 
 
 get_beta_gmn <- function(beta,
-                     zeta,
-                     tau2,
-                     E2,
-                     sV,
-                     pV,
-                     spV1,
-                     spV2,
-                     P,
-                     Q) {
+                         zeta,
+                         tau2,
+                         E2,
+                         sV,
+                         pV,
+                         spV1,
+                         spV2,
+                         P,
+                         Q) {
 
 
   (sapply(sV, function(x)
@@ -212,9 +212,9 @@ get_beta_gmn <- function(beta,
 ###################
 get_rho <- function(P1, a_rho, b_rho) {
 
-    bool_up <- upper.tri(P1)
-    (sum(P1[bool_up]) + a_rho - 1) / (sum(bool_up) + a_rho + b_rho - 2)
+  bool_up <- upper.tri(P1)
+  (sum(P1[bool_up]) + a_rho - 1) / (sum(bool_up) + a_rho + b_rho - 2)
 
-  }
+}
 
 

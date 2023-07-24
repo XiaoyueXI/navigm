@@ -20,14 +20,14 @@ navigss_vbem_core <- function(Y, V =NULL,
                "======================================== \n\n"))
 
     ans <- gm_vbem_core(Y,
-                                list_hyper = list_hyper,
-                                list_init =  list_init,
-                                tol = tol,
-                                maxit = maxit,
-                                verbose = verbose,
-                                track_ELBO = track_ELBO,
-                                debug = debug,
-                                version = version)
+                        list_hyper = list_hyper,
+                        list_init =  list_init,
+                        tol = tol,
+                        maxit = maxit,
+                        verbose = verbose,
+                        track_ELBO = track_ELBO,
+                        debug = debug,
+                        version = version)
 
   }else if(method == 'GMN'){
 
@@ -36,14 +36,14 @@ navigss_vbem_core <- function(Y, V =NULL,
                "============================================================================================================== \n\n"))
 
     ans <- gmn_vbem_core(Y,
-                                 V,
-                                 list_hyper = list_hyper,
-                                 list_init =  list_init,
-                                 tol = tol,
-                                 maxit = maxit,
-                                 verbose = verbose,
-                                 track_ELBO = track_ELBO,
-                                 debug = debug)
+                         V,
+                         list_hyper = list_hyper,
+                         list_init =  list_init,
+                         tol = tol,
+                         maxit = maxit,
+                         verbose = verbose,
+                         track_ELBO = track_ELBO,
+                         debug = debug)
 
 
   }else if(method == 'GMSS'){
@@ -53,14 +53,14 @@ navigss_vbem_core <- function(Y, V =NULL,
                "====================================================================================================================== \n\n"))
 
     ans <- gmss_vbem_core(Y,
-                                  V,
-                                  list_hyper = list_hyper,
-                                  list_init =  list_init,
-                                  tol = tol,
-                                  maxit = maxit,
-                                  verbose = verbose,
-                                  track_ELBO = track_ELBO,
-                                  debug = debug)
+                          V,
+                          list_hyper = list_hyper,
+                          list_init =  list_init,
+                          tol = tol,
+                          maxit = maxit,
+                          verbose = verbose,
+                          track_ELBO = track_ELBO,
+                          debug = debug)
 
   }
 

@@ -6,14 +6,14 @@
 
 
 gmn_em_core <-  function(Y,
-                          V,
-                          list_hyper = NULL,
-                          list_init = NULL,
-                          tol = 1e-1,
-                          maxit = 1e3,
-                          verbose = T,
-                          track_ELBO = F,
-                          debug = F) {
+                         V,
+                         list_hyper = NULL,
+                         list_init = NULL,
+                         tol = 1e-1,
+                         maxit = 1e3,
+                         verbose = T,
+                         track_ELBO = F,
+                         debug = F) {
 
 
   # Disabled options
@@ -232,28 +232,28 @@ gmn_em_core <-  function(Y,
     if (isTRUE(all.equal(c, 1))) {
       if (debug == T) {
         ELBO0 <- get_elbo_gmn_em(Omega,
-                                   zeta,
-                                   beta,
-                                   tau1,
-                                   tau2,
-                                   P1,
-                                   E1,
-                                   E2,
-                                   E2_2,
-                                   S,
-                                   V,
-                                   lambda,
-                                   v0,
-                                   v1,
-                                   n0,
-                                   t02,
-                                   a_tau,
-                                   b_tau,
-                                   a_sigma,
-                                   b_sigma,
-                                   N,
-                                   P,
-                                   Q)
+                                 zeta,
+                                 beta,
+                                 tau1,
+                                 tau2,
+                                 P1,
+                                 E1,
+                                 E2,
+                                 E2_2,
+                                 S,
+                                 V,
+                                 lambda,
+                                 v0,
+                                 v1,
+                                 n0,
+                                 t02,
+                                 a_tau,
+                                 b_tau,
+                                 a_sigma,
+                                 b_sigma,
+                                 N,
+                                 P,
+                                 Q)
       }
     }
 
@@ -287,28 +287,28 @@ gmn_em_core <-  function(Y,
     #
     if (isTRUE(all.equal(c, 1))) {
       ELBO <- get_elbo_gmn_em(Omega,
-                                zeta,
-                                beta,
-                                tau1,
-                                tau2,
-                                P1,
-                                E1,
-                                E2,
-                                E2_2,
-                                S,
-                                V,
-                                lambda,
-                                v0,
-                                v1,
-                                n0,
-                                t02,
-                                a_tau,
-                                b_tau,
-                                a_sigma,
-                                b_sigma,
-                                N,
-                                P,
-                                Q)
+                              zeta,
+                              beta,
+                              tau1,
+                              tau2,
+                              P1,
+                              E1,
+                              E2,
+                              E2_2,
+                              S,
+                              V,
+                              lambda,
+                              v0,
+                              v1,
+                              n0,
+                              t02,
+                              a_tau,
+                              b_tau,
+                              a_sigma,
+                              b_sigma,
+                              N,
+                              P,
+                              Q)
 
       ELBO_diff <- abs(ELBO - ELBO_old)
 
@@ -348,20 +348,21 @@ gmn_em_core <-  function(Y,
   pt <- Sys.time() - pt
   cat('Algorithm runtime: ',format(pt), '\n')
 
-
-  estimates <- list(Omega,
-                    zeta,
-                    beta,
-                    tau1,
-                    tau2,
-                    P1,
-                    E1,
-                    E2,
-                    E2_2
+  estimates <- list(Omega = Omega,
+                    zeta = zeta,
+                    beta = beta,
+                    tau1 = tau1,
+                    tau2 = tau2,
+                    P1 = P1,
+                    E1 = E1,
+                    E2 = E2,
+                    E2_2 = E2_2,
+                    S = S # for model comparison
   )
 
+
   if(debug){
-    debugs <- list( n_warning )
+    debugs <- list( n_warning = n_warning )
   }else{
     debugs <- NA
   }

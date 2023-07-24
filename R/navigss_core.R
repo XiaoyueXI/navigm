@@ -2,21 +2,19 @@
 #     https://github.com/XiaoyueXI/navigss
 
 
-#' Node-level auxiliary variable informed Gaussian spike-and-slab with model selection.
+#' Node-level auxiliary variable informed Gaussian spike-and-slab.
 #'
 #' This function performs simultaneous Gaussian spike-and-slab inference and node-level auxiliary variable selections.
-#' The continuous spike-and-slab priors require exploring a grid of spike variance and selecting model.
 #'
 #' @param Y Data matrix of dimension N x P, where N is the number of samples and P is the number of nodes in the graph.
-#'   \code{Y} will be centred within \code{navigss} call.
+#'   \code{Y} will be centred within \code{navigss_core} call.
 #'
 #' @param V Input matrix of dimension P x Q, where Q is the number of candidate auxiliary variables. No need to supply intercept.
 #'   If \code{V} is not specified, set \code{method = 'GM'}.
 #'
 #' @param list_hyper A list containing the model hyperparameters:
 #'   the gamma prior on the continuous spike-and-slab scale requires shape parameter \code{a_tau} and rate parameter \code{b_tau};
-#'   the unscaled slab variances in the continuous spike-and-slab is \code{v1};
-#'   a grid of unscaled spike variances in the continuous spike-and-slab is \code{vec_v0};
+#'   the unscaled spike and slab variances in the continuous spike-and-slab are \code{v0} and \code{v1};
 #'   the exponential prior on diagonal entries requires rate parameter \code{lambda};
 #'   the normal prior on the overall sparsity requires mean \code{n0} and variance \code{t02};
 #'   the gamma prior on the slab precision in the discrete spike-and-slab requires shape parameter \code{a_sigma} and rate parameter \code{b_sigma} (needed in GMN & GMSS);
@@ -24,7 +22,7 @@
 #'   the beta prior on edge inclusion probability requires shape parameters \code{a_rho} and \code{b_rho} (only needed in \code{method = "GM"} and \code{version = 1});
 #'
 #'   if NULL or any hyperparameter specification is missing,
-#'   set to default, \code{lambda = 2, vec_v0 = seq(1e-4, 1, length.out = 16), v1 = 100, a_tau = b_tau = a_sigma = b_sigma = 2},
+#'   set to default, \code{lambda = 2, v0 = 0.1, v1 = 100, a_tau = b_tau = a_sigma = b_sigma = 2},
 #'   \code{n0 = -2, t02 = 0.5, a_o = 1, b_o = Q, a_rho = 1, b_rho = P}.
 #'
 #'  @param ne0 Vector of length 2 whose entries are the prior expectation and variance of
@@ -55,9 +53,6 @@
 #'  'GMN' (spike-and-slab graphical model with normal prior for the node-level auxiliary variable coefficients), and
 #'  'GMSS' (default; spike-and-slab graphical model with spike-and-slab prior for the node-level auxiliary variable coefficients).
 #'
-#'  @param criterion Character: the model selection criterion to be used, including
-#'  'AIC' (default), 'BIC' and 'EBIC'.
-#'
 #'  @param inference Character: the inference algorithm to be used, including
 #'  'EM' (expectation maximisation algorithm),
 #'  'VBEM' (default; variational Bayes expectation maximisation algorithm),
@@ -67,7 +62,7 @@
 #'  @param maxit Scalar: maximum number of iterations allowed (default is 1000).
 #'
 #'  @param transformV Logical; if \code{TRUE} (default) and not ranged within [0,1],
-#'  \code{V} will be standardised within \code{navigss} call.
+#'  \code{V} will be standardised within \code{navigss_core} call.
 #'  Otherwise, \code{V} will not be transformed, and can be preprocessed by users.
 #'
 #'  @param verbose Logical; if \code{TRUE} (default), standard verbosity; otherwise, no messages.
@@ -81,10 +76,7 @@
 #'  @param version Integer; take values of 1 (a beta prior on edge inclusion) or 2 (a normal prior on probit edge inclusion) only.
 #'  Only valid when \code{method = 'GM'}.
 #'
-#'  @param full_output Logical; if \code{FALSE}, the estimation for the selected model is returned.
-#'  Otherwise, the estimations are returned for all the explored models.
-#'
-#'  @details \code{navigss} implements a Gaussian graphical model
+#'  @details \code{navigss_core} implements a Gaussian graphical model
 #'   that allows incorporating and selecting node-level auxiliary variables,
 #'   thereby enhancing the detection of conditional dependence. Inference is
 #'   carried out using a scalable (variational) expectation maximisation
@@ -121,12 +113,7 @@
 #' \item{vec_ELBO_M}{Vector of length \code{it}. ELBOs after the maximisation step. }
 #' \item{vec_VB_it}{Vector of length \code{it}. Number of iterations in each variational step.
 #' \code{any(vec_VB_it == maxit)} indicates the variational step dose not converge. Only in VBEM.}
-#' \item{full_outputs}{A list containing outputs for all the explored models.}
 #' \item{pt}{Scalar. Algorithm runtime in seconds. }
-#' \item{index}{Integer. Index of spike variance selected.}
-#' \item{criterion}{Character. Input model selection criterion. }
-#' \item{vec_criterion}{Vector with the same length of list_hypr$v0_v. Evaluation of model selection criterion on a grid of spike variance. }
-#' \item{total_pt}{Total runtime of algorithm in seconds, including parallel implemntation of candidate models and model selection. }
 #' }
 #'
 #' @examples
@@ -138,151 +125,162 @@
 #' Y <- matrix(rnorm(N*P), nrow = N, ncol = P)
 #'
 #' # estimate precision matrix based on Y and meanwhile leverage node-level variables V
-#' res_navigss <-navigss(Y, V, transformV = F)
-#' # res_navigss <- navigss(Y, V, method = 'GMN', transformV = F)
-#' # res_navigss <- navigss(Y, V, method = 'GM', version = 1, transformV = F)
-#' # res_navigss <- navigss(Y, V, method = 'GM', version = 2, transformV = F)
-#' # res_navigss <- navigss(Y, V, inference = 'EM', transformV = F)
-#' # res_navigss <- navigss(Y, V, method = 'GMN', inference = 'EM', transformV = F)
-#' # res_navigss <- navigss(Y, V, method = 'GM', inference = 'EM', version = 1, transformV = F)
-#' # res_navigss <- navigss(Y, V, method = 'GM', inference = 'EM', version = 2, transformV = F)
+#' res_navigss_core <-navigss_core(Y, V, transformV = F)
+#' # res_navigss_core <- navigss_core(Y, V, method = 'GMN', transformV = F)
+#' # res_navigss_core <- navigss_core(Y, V, method = 'GM', version = 1, transformV = F)
+#' # res_navigss_core <- navigss_core(Y, V, method = 'GM', version = 2, transformV = F)
+#' # res_navigss_core <- navigss_core(Y, V, inference = 'EM', transformV = F)
+#' # res_navigss_core <- navigss_core(Y, V, method = 'GMN', inference = 'EM', transformV = F)
+#' # res_navigss_core <- navigss_core(Y, V, method = 'GM', inference = 'EM', version = 1, transformV = F)
+#' # res_navigss_core <- navigss_core(Y, V, method = 'GM', inference = 'EM', version = 2, transformV = F)
 #'
-#' @import doParallel parallel foreach matrixcalc
+#' @import matrixcalc
 #' @export
 #'
 
 
-navigss <- function(Y, V =NULL,
-                    method = 'GMSS',
-                    inference = 'VBEM',
-                    criterion = 'AIC',
-                    list_hyper = NULL, list_init = NULL,
-                    ne0 = NULL,
-                    tol = 0.1, maxit = 1000,
-                    verbose = T,
-                    track_ELBO = F, debug = F,
-                    version = NULL,
-                    # transformY = T,# as mean is 0, always centre Y
-                    transformV = T,
-                    full_output = F) {
+navigss_core <- function(Y, V =NULL,
+                         method = 'GMSS',
+                         inference = 'VBEM',
+                         list_hyper = NULL, list_init = NULL,
+                         ne0 = NULL,
+                         tol = 0.1, maxit = 1000,
+                         verbose = T,
+                         track_ELBO = F, debug = F,
+                         version = NULL,
+                         # transformY = T,# as mean is 0, always centre Y
+                         transformV = T) {
 
-  # Time
-  #
-  pt <- Sys.time()
 
-  # Set up
-  #
-  numCores <- detectCores()
-  registerDoParallel(numCores)
-
-  #
-
-  list_hyper <- set_default(list_hyper, 'v0_v', seq(1e-4,  1, length.out = 16))
-  if(any(list_hyper$vec_v0 <= 0))stop("all the entries of vec_v0 must be positive.")
-
-  if(method =='GMSS' & inference == 'EM'){
-    list_hyper <- set_default(list_hyper, 's0_v', seq(1e-4,  1, length.out = 16))
-    if(any(list_hyper$vec_s0 <= 0))stop("all the entries of vec_s0 must be positive.")
+  if (verbose){
+    cat(paste0("\n======================= \n",
+               "== Preprocess data ... == \n",
+               "======================= \n\n"))
+  }
+  if(ncol(Y)!=nrow(V)){
+    stop('Columns of Y and rows of V must match.')
   }
 
-  #
-  if (verbose) cat("== Parallel exploration of a ", ifelse(method =='GMSS' & inference == 'EM', 'double', ''),
-                   "grid of spike standard deviations ", list_hyper$v0_v," on ",numCores," cores ... \n\n")
+  # as mean is 0, always centre Y
+  # if(transformY){
+  Y <- scale(Y, center = TRUE, scale = FALSE) # center the data
+  # }
 
-  # keep all the checks & steps inside navigss_core
-  # to make it work standalone
-  #
-  if(!(method =='GMSS' & inference == 'EM')){
-    out <- foreach (v0 = list_hyper$v0_v) %dopar% {
-      list_hyper$v0 <- v0
-      navigss_core(Y = Y,
-                   V = V,
-                   method = method,
-                   inference = inference,
-                   list_hyper = list_hyper,
-                   list_init = list_init,
-                   ne0 = ne0,
-                   tol = tol,
-                   maxit = maxit,
-                   verbose = verbose,
-                   track_ELBO = track_ELBO,
-                   debug = debug,
-                   version = version,
-                   transformV = transformV)
+  if(transformV){
+    # if V \in [0,1] not scale
+    if(min(V) < 0 | max(V) > 1){
+      V <- scale(V, center = TRUE, scale = TRUE)
+    }else{
+      'V in [0,1] and thus not transformed.'
+    }
+  }
+
+  if(!is.null(V) & method == 'GM' ){
+    warning("node-level auxiliary variables (V) will not be used in GM. Please consider GMN and GMSS to leverage V.")
+  }
+
+  if(ncol(V) <= 10 & method =='GMSS'){
+    warning("Number of node-level auxiliary variables <= 10, not advised to select and change to GMN.")
+  }
+
+  if(ncol(V) > 10 & method =='GMN'){
+    warning("Number of node-level auxiliary variables > 10, advised to select and change to GMSS.")
+  }
+
+  if(is.null(V) & (method == 'GMN' | method == 'GMSS')){
+    warning('node-level auxiliary variables (V) must be provided in GMN and GMSS. Change to GM.')
+    method <- 'GM'
+  }
+
+  if (is.null(colnames(Y)) & is.null(rownames(V)))
+    colnames(Y) <- rownames(V) <- paste0("Node_", 1:ncol(Y))
+  else if (is.null(colnames(Y))) colnames(Y) <- rownames(V)
+  else if (is.null(rownames(V))) rownames(V) <- colnames(Y)
+  else if (any(colnames(Y) != rownames(V)))
+    stop("The provided column names of Y and row names of V must be the same.")
+
+  if (is.null(rownames(Y))) rownames(Y) <- paste0("Ind_", 1:nrow(Y))
+  if (is.null(colnames(V))) colnames(V) <- paste0("Var_", 1:ncol(V))
+
+  if(!is.null(version) & (method == 'GMN' | method == 'GMSS')){
+    warning("version is not used in GMN & GMSS.")
+  }
+
+  if(!is.null(list_hyper) & 'n0' %in% names(list_hyper) & 't02' %in% names(list_hyper)){
+
+    warning(paste0("Provided argument ne0 not used, as n0 and t02 were provided in list_hyper."))
+
+  }else if(!is.null(ne0)){
+
+    if(length(ne0)!=2){
+
+      warning('ne0 should have length 2, specifying expected number of edges and variance respectively. \n
+              As no valid list_hyper and ne0 are provided, use default hyperparameters n0 = -2 and t02 = 0.5.')
+
+    }else{
+
+      tmp <- get_n0_t02(ne0[1], ne0[2])
+      list_hyper$n0 <-  tmp$n0
+      list_hyper$t02 <-  tmp$t02
+
     }
   }else{
-    out <- foreach (v0 = v0_v) %:%
-      foreach(s0 = s0_v)%dopar% {
-        list_hyper$v0 <- v0
-        list_hyper$s0 <- s0
-        navigss_core(Y = Y,
-                     V = V,
-                     method = method,
-                     inference = inference,
-                     list_hyper = list_hyper,
-                     list_init = list_init,
-                     ne0 = ne0,
-                     tol = tol,
-                     maxit = maxit,
-                     verbose = verbose,
-                     track_ELBO = track_ELBO,
-                     debug = debug,
-                     version = version,
-                     transformV = transformV)
-      }
+
+    warning('As no valid list_hyper and ne0 are provided, use default hyperparameters n0 = -2 and t02 = 0.5.')
+
   }
 
 
   if (verbose) cat("... done. == \n\n")
 
-  if (verbose) cat("== Select from a grid of spike variance by ",criterion," ... \n\n")
 
-  if(criterion == 'AIC'){
+  cat("**************************************************** \n",
+      "Number of samples: ", nrow(Y), "\n",
+      "Number of nodes: ", ncol(Y), "\n")
 
-    vec_criterion <- sapply(out, function(x){AIC_GSS(x$estimates,N = nrow(x$args$Y))})
 
-  }else if(criterion == 'BIC'){
+  if(method == 'GMN' | method == 'GMSS'){
 
-    vec_criterion <- sapply(out, function(x){BIC_GSS(x$estimates,N = nrow(x$args$Y))})
-
-  }else if(criterion == 'EBIC'){
-
-    vec_criterion <- sapply(out, function(x){EBIC_GSS(x$estimates, N = nrow(x$args$Y), P = ncol(x$args$Y))})
+    cat("Number of candidate node-level auxiliary variables: ", ncol(V), "\n",
+        "**************************************************** \n\n")
 
   }
 
-  index <- which.min(vec_criterion)
-
-  if(index == 1){
-    warning('The selected v0 reaches the lower bound in the grid. Consider extend the grid to lower values. ')
-  }else if(index == length(list_hyper$v0_v)){
-    warning('The selected v0 reaches the upper bound in the grid. Consider extend the grid to higher values. ')
+  if (verbose){
+    cat(paste0("\n=========================================================\n",
+               "== Perform inference using the ",inference, " algorithm ... == \n",
+               "======================================================== \n\n"))
   }
 
-  if (verbose) cat("... done. == \n\n")
 
-  if(verbose) cat("Select the index ", index, " i.e., v0 = ", list_hyper$v0_v[index], ", the best ",criterion, " = ", vec_criterion[index], '.\n\n')
+  if(inference == 'EM'){
 
-  pt <- Sys.time() - pt
-  cat('Total runtime: ',format(pt), '\n')
-
-  ans <- out[[index]]
-  ans <- c(ans,
-           list(
-             index = index,
-             criterion = criterion,
-             vec_criterion = vec_criterion,
-             total_pt = pt
-           ))
-
-
-  if(full_output){
-
-    ans$full_output <- out
-
+    res_navigss <- navigss_em_core(Y = Y,
+                                   V = V,
+                                   method = method,
+                                   list_hyper = list_hyper,
+                                   list_init = list_init,
+                                   tol = tol,
+                                   maxit = maxit,
+                                   verbose = verbose,
+                                   track_ELBO = track_ELBO,
+                                   debug = debug,
+                                   version = version)
+  }else if(inference == 'VBEM'){
+    res_navigss <- navigss_vbem_core(Y = Y,
+                                     V = V,
+                                     method = method,
+                                     list_hyper = list_hyper,
+                                     list_init = list_init,
+                                     tol = tol,
+                                     maxit = maxit,
+                                     verbose = verbose,
+                                     track_ELBO = track_ELBO,
+                                     debug = debug,
+                                     version = version)
   }
 
-  return(ans)
+  return(res_navigss)
 }
 
 

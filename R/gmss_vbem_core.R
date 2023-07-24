@@ -640,26 +640,27 @@ gmss_vbem_core  <- function(Y,
   pt <- Sys.time() - pt
   cat('Algorithm runtime: ',format(pt), '\n')
 
-  estimates <- list( Omega,
-                     m_delta,
-                     alpha_tau,
-                     beta_tau,
-                     m_gamma,
-                     mu_beta,
-                     sig2_inv_beta,
-                     mu_zeta,
-                     sig2_inv_zeta,
-                     alpha_o,
-                     beta_o,
-                     alpha_sigma,
-                     beta_sigma
+  estimates <- list( Omega = Omega,
+                     m_delta = m_delta,
+                     alpha_tau = alpha_tau,
+                     beta_tau = beta_tau,
+                     m_gamma =  m_gamma,
+                     mu_beta = mu_beta,
+                     sig2_inv_beta = sig2_inv_beta,
+                     mu_zeta = mu_zeta,
+                     sig2_inv_zeta = sig2_inv_zeta,
+                     alpha_o = alpha_o,
+                     beta_o = beta_o,
+                     alpha_sigma = alpha_sigma,
+                     beta_sigma = beta_sigma,
+                     S = S # for model comparison
   )
 
   if(debug){
 
-    debugs <- list( n_warning,
-                    vec_n_warning_VB,
-                    list_ELBO)
+    debugs <- list( n_warning = n_warning,
+                    vec_n_warning_VB = vec_n_warning_VB,
+                    list_ELBO = list_ELBO)
 
   }else{
 
