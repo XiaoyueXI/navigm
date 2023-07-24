@@ -1,12 +1,16 @@
 Package: navigss
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Node-level auxiliary variable informed Gaussian spike-and-slab.
 Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+Authors@R: c(
+person("Xiaoyue", "Xi", , "xiaoyue.xi94@gmail.com", role = c("aut", "cre")),
+person("Helene", "Ruffieux", email = "helene.ruffieux@mrc-bsu.cam.ac.uk",
+            role = c("aut", "cre")))
+Maintainer: Xiaoyue Xi <xiaoyue.xi94@gmail.com>
+Description:  Estimation of a Gaussian spike-and-slab that leverages and selects the node-level
+auxiliary variables using fast expectation maximisation and variational Bayes 
+expectation maximisation algorithm.
+License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.2.3
