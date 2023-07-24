@@ -1,10 +1,10 @@
 # This file is part of the `navigss` R package:
 #     https://github.com/XiaoyueXI/navigss
 #
-# Internal functions to call the variational EM algorithm for GMSS
+# Internal functions to call the variational EM algorithm for GMN
 
 
-gmss_vbem_core  <- function(Y,
+gmn_vbem_core  <- function(Y,
                             V,
                             list_hyper = NULL,
                             list_init = NULL,
@@ -24,14 +24,13 @@ gmss_vbem_core  <- function(Y,
   if (!is.null(anneal)) {
 
     vec_c <- get_annealing_ladder_(anneal, verbose = verbose)
-    c <- 1
 
   } else {
 
     vec_c <- NULL
-    c <- 1
 
   }
+  c <- 1
 
   # Save inputs
   #
@@ -58,8 +57,6 @@ gmss_vbem_core  <- function(Y,
   N <- nrow(Y)
   Q <- ncol(V)
 
-  #
-  #
   S <- crossprod(Y)
 
   if (verbose) cat("== Preparing the hyperparameters ... \n\n")
@@ -91,12 +88,6 @@ gmss_vbem_core  <- function(Y,
 
   list_hyper <- set_default(list_hyper, 't02', 0.5)
   if(list_hyper$t02 <= 0)stop("t02 must be positive.")
-
-  list_hyper <- set_default(list_hyper, 'a_o', 1)
-  if(list_hyper$a_o <= 0)stop("a_o must be positive.")
-
-  list_hyper <- set_default(list_hyper, 'b_o', Q)
-  if(list_hyper$b_o <= 0)stop("b_o must be positive.")
 
   if (verbose) cat("... done. == \n\n")
 
@@ -213,47 +204,10 @@ gmss_vbem_core  <- function(Y,
 
   }
 
-  if (!'alpha_o' %in% names(list_init) | ('alpha_o' %in% names(list_init) & is.null(list_init$alpha_o))) {
-
-    alpha_o <- 1
-
-  }else{
-
-    if( alpha_o <= 0){
-      stop("alpha_o must be positive.")
-    }
-
-  }
-
-  if (!'beta_o' %in% names(list_init) | ('beta_o' %in% names(list_init) & is.null(list_init$beta_o))) {
-
-    beta_o <- Q
-
-  }else{
-
-    if( beta_o <= 0){
-      stop("beta_o must be positive.")
-    }
-
-  }
-
   # Initialise deduced quantities
   #
   m_tau <- get_m_tau(alpha_tau, beta_tau)
-
-  m_log_o <- get_m_log_o(alpha_o, beta_o)
-  m_log_one_minus_o <- get_m_log_one_minus_o(alpha_o, beta_o)
-  m_log_sig2_inv <- get_m_log_sig2_inv(alpha_sigma, beta_sigma)
-  m_sig2_inv <- get_m_sig2_inv(alpha_sigma, beta_sigma)
-  m_gamma <-
-    update_m_gamma(
-      m_log_o,
-      m_log_one_minus_o,
-      m_log_sig2_inv,
-      mu_beta,
-      sig2_inv_beta,
-      c
-    )
+  m_gamma <- rep(1,Q)
 
   m1_beta <- get_m1_beta(mu_beta, m_gamma)
   m2_beta <- get_m2_beta(mu_beta, sig2_inv_beta, m_gamma)
@@ -325,7 +279,7 @@ gmss_vbem_core  <- function(Y,
 
 
     # VBE step :
-    # ======== #
+    # ====== #
 
     ELBO_diff <- Inf
     ELBO_old <- -Inf
@@ -352,15 +306,6 @@ gmss_vbem_core  <- function(Y,
       # % # z
       m1_z <- get_E2(m_delta, m1_alpha, vbc)
       m2_z <- get_E2_2(m1_z, m1_alpha, vbc)
-      # % #
-
-      # % # o
-      alpha_o <- update_alpha_o(m_gamma, a_o, vbc)
-      beta_o <- update_beta_o(m_gamma, b_o, vbc)
-
-      m_o <- get_m_o(alpha_o, beta_o)
-      m_log_o <- get_m_log_o(alpha_o, beta_o)
-      m_log_one_minus_o <- get_m_log_one_minus_o(alpha_o, beta_o)
       # % #
 
       # % # tau
@@ -392,18 +337,6 @@ gmss_vbem_core  <- function(Y,
                                 V, sV, spV1, spV2, P, Q, vbc)
       # % #
 
-      # % # gamma
-      m_gamma <-
-        update_m_gamma(
-          m_log_o,
-          m_log_one_minus_o,
-          m_log_sig2_inv,
-          mu_beta,
-          sig2_inv_beta,
-          vbc
-        )
-      # % #
-
       # % #
       m1_beta <- get_m1_beta(mu_beta, m_gamma)
       m2_beta <- get_m2_beta(mu_beta, sig2_inv_beta, m_gamma)
@@ -416,7 +349,7 @@ gmss_vbem_core  <- function(Y,
       # % #
 
       # % #
-      ELBO <-  get_elbo_gmss_vbem(Omega,
+      ELBO <-  get_elbo_gmn_vbem(Omega,
                                   m_delta,
                                   alpha_tau,
                                   beta_tau,
@@ -434,10 +367,6 @@ gmss_vbem_core  <- function(Y,
                                   sig2_inv_beta,
                                   m1_alpha,
                                   sum_var_alpha,
-                                  alpha_o,
-                                  beta_o,
-                                  m_log_o,
-                                  m_log_one_minus_o,
                                   E1,
                                   S,
                                   lambda,
@@ -449,8 +378,6 @@ gmss_vbem_core  <- function(Y,
                                   b_tau,
                                   a_sigma,
                                   b_sigma,
-                                  a_o,
-                                  b_o,
                                   N,
                                   P,
                                   vbc)
@@ -504,7 +431,7 @@ gmss_vbem_core  <- function(Y,
     #  check the increasing ELBO in the M-step
     #
     if (debug) {
-      ELBO_M0 <- get_elbo_gmss_vbem(Omega,
+      ELBO_M0 <- get_elbo_gmn_vbem(Omega,
                                     m_delta,
                                     alpha_tau,
                                     beta_tau,
@@ -522,10 +449,6 @@ gmss_vbem_core  <- function(Y,
                                     sig2_inv_beta,
                                     m1_alpha,
                                     sum_var_alpha,
-                                    alpha_o,
-                                    beta_o,
-                                    m_log_o,
-                                    m_log_one_minus_o,
                                     E1,
                                     S,
                                     lambda,
@@ -537,8 +460,6 @@ gmss_vbem_core  <- function(Y,
                                     b_tau,
                                     a_sigma,
                                     b_sigma,
-                                    a_o,
-                                    b_o,
                                     N,
                                     P,
                                     vbc)
@@ -563,7 +484,7 @@ gmss_vbem_core  <- function(Y,
     # % #
 
     #
-    ELBO_M <- get_elbo_gmss_vbem(Omega,
+    ELBO_M <- get_elbo_gmn_vbem(Omega,
                                  m_delta,
                                  alpha_tau,
                                  beta_tau,
@@ -581,10 +502,6 @@ gmss_vbem_core  <- function(Y,
                                  sig2_inv_beta,
                                  m1_alpha,
                                  sum_var_alpha,
-                                 alpha_o,
-                                 beta_o,
-                                 m_log_o,
-                                 m_log_one_minus_o,
                                  E1,
                                  S,
                                  lambda,
@@ -596,8 +513,6 @@ gmss_vbem_core  <- function(Y,
                                  b_tau,
                                  a_sigma,
                                  b_sigma,
-                                 a_o,
-                                 b_o,
                                  N,
                                  P,
                                  vbc)
@@ -649,22 +564,16 @@ gmss_vbem_core  <- function(Y,
                      sig2_inv_beta,
                      mu_zeta,
                      sig2_inv_zeta,
-                     alpha_o,
-                     beta_o,
                      alpha_sigma,
                      beta_sigma
   )
 
   if(debug){
-
     debugs <- list( n_warning,
                     vec_n_warning_VB,
                     list_ELBO)
-
   }else{
-
     debugs <- NA
-
   }
 
   create_named_list_(

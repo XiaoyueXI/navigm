@@ -193,3 +193,123 @@ effective_sum <- function(x) {
   }
 
 }
+
+# Functions for hyperparameter settings
+#
+E_Phi_X <- function(mu, s2, lower_tail = TRUE) {
+
+  pnorm(mu / sqrt(1 + s2), lower.tail = lower_tail)
+
+}
+
+E_Phi_X_2 <- function(mu, s2) {
+
+  pnorm(mu / sqrt(1 + s2)) -
+    2 * PowerTOST::OwensT(mu / sqrt(1 + s2), 1 / sqrt(1 + 2 * s2))
+
+}
+
+get_V_p_t <- function(mu, s2, p) {
+  p * (p - 1) * E_Phi_X_2(mu, s2) -
+    p^2 * E_Phi_X(mu, s2)^2 +
+    p * E_Phi_X(mu, s2)
+}
+
+
+get_mu <- function(E_p_t, s2, p) {
+
+  sqrt(1 + s2) * qnorm(E_p_t / p)
+
+}
+
+
+get_n0_t02 <- function(p, p_star) {
+
+  E_p_t <- p_star[1]
+  V_p_t <- min(p_star[2], floor(2 * p / 3))
+
+  dn <- 1e-6
+  up <- 1e5
+
+  # Get n0 and t02 similarly as for a_omega_t and b_omega_t in HESS
+  # (specify expectation and variance of number of active predictors per response)
+  #
+  # Look at : gam_st | theta_s = 0
+  #
+  tryCatch(t02 <- uniroot(function(x)
+    get_V_p_t(get_mu(E_p_t, x, p), x, p) - V_p_t,
+    interval = c(dn, up))$root,
+    error = function(e) {
+      stop(paste0("No hyperparameter values matching the expectation and variance ",
+                  "of the number of edges when no hubs appear. ",
+                  "Please change their values."))
+    })
+
+  # n0 sets the level of sparsity.
+  n0 <- get_mu(E_p_t, t02, p)
+
+  create_named_list_(n0, t02)
+}
+
+
+
+# Functions for hyperparameter settings
+#
+E_Phi_X <- function(mu, s2, lower_tail = TRUE) {
+
+  pnorm(mu / sqrt(1 + s2), lower.tail = lower_tail)
+
+}
+
+E_Phi_X_2 <- function(mu, s2) {
+
+  pnorm(mu / sqrt(1 + s2)) -
+    2 * PowerTOST::OwensT(mu / sqrt(1 + s2), 1 / sqrt(1 + 2 * s2))
+
+}
+
+get_V_p_t <- function(mu, s2, p) {
+  p * (p - 1) * E_Phi_X_2(mu, s2) -
+    p^2 * E_Phi_X(mu, s2)^2 +
+    p * E_Phi_X(mu, s2)
+}
+
+
+get_mu <- function(E_p_t, s2, p) {
+
+  sqrt(1 + s2) * qnorm(E_p_t / p)
+
+}
+
+
+get_n0_t02 <- function(p, p_star) {
+
+  E_p_t <- p_star[1]
+  V_p_t <- min(p_star[2], floor(2 * p / 3))
+
+  dn <- 1e-6
+  up <- 1e5
+
+  # Get n0 and t02 similarly as for a_omega_t and b_omega_t in HESS
+  # (specify expectation and variance of number of active predictors per response)
+  #
+  # Look at : gam_st | theta_s = 0
+  #
+  tryCatch(t02 <- uniroot(function(x)
+    get_V_p_t(get_mu(E_p_t, x, p), x, p) - V_p_t,
+    interval = c(dn, up))$root,
+    error = function(e) {
+      stop(paste0("No hyperparameter values matching the expectation and variance ",
+                  "of the number of edges when no hubs appear. ",
+                  "Please change their values."))
+    })
+
+  # n0 sets the level of sparsity.
+  n0 <- get_mu(E_p_t, t02, p)
+
+  create_named_list_(n0, t02)
+}
+
+
+
+

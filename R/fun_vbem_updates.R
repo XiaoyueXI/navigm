@@ -49,6 +49,12 @@ get_m2_zeta <- function(mu_zeta, sig2_inv_zeta) {
   mu_zeta ^ 2 + sig2_inv_zeta ^ (-1)
 }
 
+update_mu_zeta_gm <-
+  function(sig2_inv_zeta, m_z, n0, t02, c = 1) {
+    bool_up <- upper.tri(m_z)
+    c * (sum(m_z[bool_up]) + n0 / t02) / sig2_inv_zeta
+  }
+
 ####################
 
 ## sigma's updates ##
@@ -193,11 +199,11 @@ get_sum_var_alpha <- function(sig2_inv_zeta, m1_beta, m2_beta, V, pV, p){
     2 * sum(sapply(pV, sum) *( m2_beta - m1_beta^2))
 }
 
-####################
+#####################
 
 ## omega's updates ##
 
-####################
+#####################
 
 
 get_omega <- function(E1, S, Omega, lambda, n, p) {
@@ -220,33 +226,35 @@ get_omega <- function(E1, S, Omega, lambda, n, p) {
 }
 
 
-get_E1 <- function(P, v0, v1) {
-    ans <- (1 - P) / v0 ^ 2 + P / v1 ^ 2
-    return(ans)
+#######################################################
+
+## delta's updates in GM with beta prior on edge PIP ##
+
+#######################################################
+
+update_m_delta_betap <- function(Omega, m_tau, m_log_rho, m_log_one_minus_rho, v0, v1, c=1) {
+
+  1 / (1 + exp(
+    c * log(v1 / v0) +
+      c * m_tau * Omega ^ 2 * (1 / v1 ^ 2 - 1 / v0 ^ 2) / 2 +
+      c * m_log_one_minus_rho -
+      c * m_log_rho
+  ))
+
 }
 
-get_E2 <- function(P, Alpha, c = 1) {
-  sqrt_c <- sqrt(c)
-  log_pnorm <- pnorm(sqrt_c * Alpha, log.p = TRUE)
-  log_1_pnorm <-
-    pnorm(sqrt_c * Alpha, log.p = TRUE, lower.tail = FALSE)
+####################
 
-  imr0 <-
-    inv_mills_ratio_(0, sqrt_c * Alpha, log_1_pnorm, log_pnorm)
-  imr1 <-
-    inv_mills_ratio_(1, sqrt_c * Alpha, log_1_pnorm, log_pnorm)
+## rho's updates ##
 
-  E2 <- Alpha  + imr0 / sqrt_c + P * (imr1 - imr0) / sqrt_c
+####################
 
-  diag(E2) <- 0
-
-  return(E2)
+update_alpha_rho <- function(m_delta, a_rho, c = 1){
+  c * (sum(m_delta[upper.tri(m_delta)]) + a_rho - 1) + 1
 }
 
-
-get_E2_2 <- function(E2, Alpha, cst = 1) {
-    Alpha * E2 + 1 / cst
-
+update_beta_rho <- function(m_delta, b_rho, c = 1){
+  c * (sum(1 - m_delta[upper.tri(m_delta)]) + b_rho - 1) + 1
 }
 
 

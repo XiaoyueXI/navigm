@@ -54,7 +54,7 @@ e_delta_z <- function(m_delta,
                       c){
 
   eps <- .Machine$double.eps
-  bool_up <- upper.tri(Omega)
+  bool_up <- upper.tri(m_delta)
 
   - sum_var_alpha/2 +
     #
@@ -265,5 +265,237 @@ get_elbo_gmss_vbem <- function(Omega,
               m_log_sig2_inv,
               a_sigma,
               b_sigma)
+  )
+}
+
+########################################################
+
+## GMN
+## E log p(beta, gamma | rest) - E log q(beta, gamma) ##
+
+########################################################
+
+e_beta_gmn <- function(m_gamma,
+                       m_sig2_inv,
+                       m_log_sig2_inv,
+                       m2_beta,
+                       sig2_inv_beta,
+                       a_sigma,
+                       b_sigma){
+
+  eps <- .Machine$double.eps
+
+  sum(m_gamma)/2 * m_log_sig2_inv -
+    sum(m_gamma * m2_beta)/2 * m_sig2_inv +
+    sum(m_gamma * (1 + log(2 * pi * sig2_inv_beta^(-1) + eps))/2 )
+
+}
+
+get_elbo_gmn_vbem <- function(Omega,
+                              m_delta,
+                              alpha_tau,
+                              beta_tau,
+                              m_tau,
+                              m_log_tau,
+                              mu_zeta,
+                              sig2_inv_zeta,
+                              m2_zeta,
+                              m_gamma,
+                              alpha_sigma,
+                              beta_sigma,
+                              m_log_sig2_inv,
+                              m_sig2_inv,
+                              m2_beta,
+                              sig2_inv_beta,
+                              m1_alpha,
+                              sum_var_alpha,
+                              E1,
+                              S,
+                              lambda,
+                              v0,
+                              v1,
+                              n0,
+                              t02,
+                              a_tau,
+                              b_tau,
+                              a_sigma,
+                              b_sigma,
+                              N,
+                              P,
+                              c) {
+
+  c * (
+    e_y(Omega, S, N) +
+      e_omega(Omega,
+              m_delta,
+              E1,
+              m_tau,
+              m_log_tau,
+              lambda,
+              v0,
+              v1,
+              P) +
+      e_delta_z(m_delta,
+                m1_alpha,
+                sum_var_alpha,
+                c) +
+      e_tau(alpha_tau,
+            beta_tau,
+            m_tau,
+            m_log_tau,
+            a_tau,
+            b_tau) +
+      e_zeta(mu_zeta,
+             sig2_inv_zeta,
+             m2_zeta,
+             n0,
+             t02) +
+      e_beta_gmn(m_gamma,
+                 m_sig2_inv,
+                 m_log_sig2_inv,
+                 m2_beta,
+                 sig2_inv_beta,
+                 a_sigma,
+                 b_sigma) +
+      e_sigma(alpha_sigma,
+              beta_sigma,
+              m_sig2_inv,
+              m_log_sig2_inv,
+              a_sigma,
+              b_sigma)
+  )
+}
+
+
+####################################
+
+## E log p(rho | rest) - E log q(rho) ##
+
+####################################
+
+e_delta_rho <- function(alpha_rho,
+                        beta_rho,
+                        m_log_rho,
+                        m_log_one_minus_rho,
+                        m_delta,
+                        a_rho,
+                        b_rho){
+
+
+  eps <- .Machine$double.eps
+  bool_up <- upper.tri(m_delta)
+
+  (sum(m_delta[bool_up]) + a_rho - alpha_rho) * m_log_rho +
+    (sum(1 - m_delta[bool_up]) + b_rho - beta_rho) * m_log_one_minus_rho +
+    lbeta(alpha_rho, beta_rho) -
+    sum(m_delta[bool_up] * log(m_delta[bool_up] + eps))-
+    sum((1-m_delta[bool_up]) * log(1-m_delta[bool_up] + eps))
+
+
+}
+
+
+get_elbo_gm_vbem_v1 <- function(Omega,
+                                m_delta,
+                                alpha_tau,
+                                beta_tau,
+                                m_tau,
+                                m_log_tau,
+                                alpha_rho,
+                                beta_rho,
+                                m_log_rho,
+                                m_log_one_minus_rho,
+                                E1,
+                                S,
+                                lambda,
+                                v0,
+                                v1,
+                                a_rho,
+                                b_rho,
+                                a_tau,
+                                b_tau,
+                                N,
+                                P,
+                                c) {
+
+  c * (
+    e_y(Omega, S, N) +
+      e_omega(Omega,
+              m_delta,
+              E1,
+              m_tau,
+              m_log_tau,
+              lambda,
+              v0,
+              v1,
+              P) +
+      e_tau(alpha_tau,
+            beta_tau,
+            m_tau,
+            m_log_tau,
+            a_tau,
+            b_tau) +
+      e_delta_rho(alpha_rho,
+                  beta_rho,
+                  m_log_rho,
+                  m_log_one_minus_rho,
+                  m_delta,
+                  a_rho,
+                  b_rho)
+
+  )
+}
+
+
+get_elbo_gm_vbem_v2 <- function(Omega,
+                                m_delta,
+                                alpha_tau,
+                                beta_tau,
+                                m_tau,
+                                m_log_tau,
+                                mu_zeta,
+                                sig2_inv_zeta,
+                                m2_zeta,
+                                m1_alpha,
+                                sum_var_alpha,
+                                E1,
+                                S,
+                                lambda,
+                                v0,
+                                v1,
+                                n0,
+                                t02,
+                                a_tau,
+                                b_tau,
+                                N,
+                                P,
+                                c) {
+
+  c * (
+    e_y(Omega, S, N) +
+      e_omega(Omega,
+              m_delta,
+              E1,
+              m_tau,
+              m_log_tau,
+              lambda,
+              v0,
+              v1,
+              P) +
+      e_delta_z(m_delta,
+                m1_alpha,
+                sum_var_alpha,
+                c) +
+      e_tau(alpha_tau,
+            beta_tau,
+            m_tau,
+            m_log_tau,
+            a_tau,
+            b_tau) +
+      e_zeta(mu_zeta,
+             sig2_inv_zeta,
+             m2_zeta,
+             n0,
+             t02)
   )
 }
