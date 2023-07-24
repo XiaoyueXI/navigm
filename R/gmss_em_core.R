@@ -191,11 +191,11 @@ gmss_em_core <-  function(Y,
   #
   if (track_ELBO) {
 
-    vec_ELBO <- c()
+    vec_ELBO_M <- c()
 
   } else{
 
-    vec_ELBO <- NA
+    vec_ELBO_M <- NA
 
   }
 
@@ -372,7 +372,7 @@ gmss_em_core <-  function(Y,
       ELBO_old <- ELBO
 
       if (track_ELBO) {
-        vec_ELBO <- c(vec_ELBO, ELBO)
+        vec_ELBO_M <- c(vec_ELBO_M, ELBO)
       }
     }
   }
@@ -418,7 +418,7 @@ gmss_em_core <-  function(Y,
     estimates,
     debugs,
     it,
-    vec_ELBO,
+    vec_ELBO_M,
     pt
   )
 

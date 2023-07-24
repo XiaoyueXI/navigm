@@ -10,6 +10,7 @@ gm_em_core <-  function(Y,
                         list_init = NULL,
                         tol = 1e-1,
                         maxit = 1e3,
+                        seed = 123,
                         verbose = T,
                         track_ELBO = F,
                         debug = F,
@@ -57,7 +58,7 @@ gm_em_core <-  function(Y,
   }else{
 
     if (version!=1 & version!=2)
-      stop('version takes arguments 1 (a beta prior on edge inclusion) or 2 (a normal prior on probit edge inclusion)')
+      stop('version takes arguments 1 (a betag prior on edge inclusion) or 2 (a normal prior on probit edge inclusion)')
 
   }
 
@@ -176,11 +177,11 @@ gm_em_core <-  function(Y,
   #
   if (track_ELBO) {
 
-    vec_ELBO <- c()
+    vec_ELBO_M <- c()
 
   } else{
 
-    vec_ELBO <- NA
+    vec_ELBO_M <- NA
 
   }
 
@@ -363,7 +364,7 @@ gm_em_core <-  function(Y,
       ELBO_old <- ELBO
 
       if (track_ELBO) {
-        vec_ELBO <- c(vec_ELBO, ELBO)
+        vec_ELBO_M <- c(vec_ELBO_M, ELBO)
       }
     }
   }
@@ -417,7 +418,7 @@ gm_em_core <-  function(Y,
     estimates,
     debugs,
     it,
-    vec_ELBO,
+    vec_ELBO_M,
     pt
   )
 
