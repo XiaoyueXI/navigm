@@ -61,9 +61,8 @@
 #'
 #'  @param maxit Scalar: maximum number of iterations allowed (default is 1000).
 #'
-#'  @param transformV Logical; if \code{TRUE} (default) and not ranged within [0,1],
-#'  \code{V} will be standardised within \code{navigss_core} call.
-#'  Otherwise, \code{V} will not be transformed, and can be preprocessed by users.
+#'  @param transformV Logical; if \code{FALSE} (default), \code{V} will not be transformed;
+#'  Otherwise and if \code{V} does not range within [0,1],  \code{V} will be standardised within \code{navigss} call.
 #'
 #'  @param verbose Logical; if \code{TRUE} (default), standard verbosity; otherwise, no messages.
 #'
@@ -125,14 +124,14 @@
 #' Y <- matrix(rnorm(N*P), nrow = N, ncol = P)
 #'
 #' # estimate precision matrix based on Y and meanwhile leverage node-level variables V
-#' res_navigss_core <-navigss_core(Y, V, transformV = F)
-#' # res_navigss_core <- navigss_core(Y, V, method = 'GMN', transformV = F)
-#' # res_navigss_core <- navigss_core(Y, V, method = 'GM', version = 1, transformV = F)
-#' # res_navigss_core <- navigss_core(Y, V, method = 'GM', version = 2, transformV = F)
-#' # res_navigss_core <- navigss_core(Y, V, inference = 'EM', transformV = F)
-#' # res_navigss_core <- navigss_core(Y, V, method = 'GMN', inference = 'EM', transformV = F)
-#' # res_navigss_core <- navigss_core(Y, V, method = 'GM', inference = 'EM', version = 1, transformV = F)
-#' # res_navigss_core <- navigss_core(Y, V, method = 'GM', inference = 'EM', version = 2, transformV = F)
+#' res_navigss_core <-navigss_core(Y, V)
+#' # res_navigss_core <- navigss_core(Y, V, method = 'GMN')
+#' # res_navigss_core <- navigss_core(Y, V, method = 'GM', version = 1)
+#' # res_navigss_core <- navigss_core(Y, V, method = 'GM', version = 2)
+#' # res_navigss_core <- navigss_core(Y, V, inference = 'EM')
+#' # res_navigss_core <- navigss_core(Y, V, method = 'GMN', inference = 'EM')
+#' # res_navigss_core <- navigss_core(Y, V, method = 'GM', inference = 'EM', version = 1)
+#' # res_navigss_core <- navigss_core(Y, V, method = 'GM', inference = 'EM', version = 2)
 #'
 #' @import matrixcalc
 #' @export
@@ -149,7 +148,7 @@ navigss_core <- function(Y, V =NULL,
                          track_ELBO = F, debug = F,
                          version = NULL,
                          # transformY = T,# as mean is 0, always centre Y
-                         transformV = T) {
+                         transformV = F) {
 
 
   if (verbose){
@@ -157,50 +156,56 @@ navigss_core <- function(Y, V =NULL,
                "== Preprocess data ... == \n",
                "======================= \n\n"))
   }
-  if(ncol(Y)!=nrow(V)){
-    stop('Columns of Y and rows of V must match.')
+
+  if(!is.null(V)){
+    if(ncol(Y)!=nrow(V)){
+      stop('Columns of Y and rows of V must match.')
+    }
+
+    if(transformV){
+      # if V \in [0,1] not scale
+      if(min(V) < 0 | max(V) > 1){
+        V <- scale(V, center = TRUE, scale = TRUE)
+      }else{
+        'V in [0,1] and thus not transformed.'
+      }
+    }
+
+    if(!is.null(V) & method == 'GM' ){
+      warning("node-level auxiliary variables (V) will not be used in GM. Please consider GMN and GMSS to leverage V.")
+    }
+
+    if(ncol(V) <= 10 & method =='GMSS'){
+      warning("Number of node-level auxiliary variables <= 10, not advised to select and change to GMN.")
+    }
+
+    if(ncol(V) > 10 & method =='GMN'){
+      warning("Number of node-level auxiliary variables > 10, advised to select and change to GMSS.")
+    }
+
+    if(is.null(V) & (method == 'GMN' | method == 'GMSS')){
+      warning('node-level auxiliary variables (V) must be provided in GMN and GMSS. Change to GM.')
+      method <- 'GM'
+    }
+
+    if (is.null(colnames(Y)) & is.null(rownames(V)))
+      colnames(Y) <- rownames(V) <- paste0("Node_", 1:ncol(Y))
+    else if (is.null(colnames(Y))) colnames(Y) <- rownames(V)
+    else if (is.null(rownames(V))) rownames(V) <- colnames(Y)
+    else if (any(colnames(Y) != rownames(V)))
+      stop("The provided column names of Y and row names of V must be the same.")
+
+    if (is.null(rownames(Y))) rownames(Y) <- paste0("Ind_", 1:nrow(Y))
+    if (is.null(colnames(V))) colnames(V) <- paste0("Var_", 1:ncol(V))
+
   }
+
 
   # as mean is 0, always centre Y
   # if(transformY){
   Y <- scale(Y, center = TRUE, scale = FALSE) # center the data
   # }
 
-  if(transformV){
-    # if V \in [0,1] not scale
-    if(min(V) < 0 | max(V) > 1){
-      V <- scale(V, center = TRUE, scale = TRUE)
-    }else{
-      'V in [0,1] and thus not transformed.'
-    }
-  }
-
-  if(!is.null(V) & method == 'GM' ){
-    warning("node-level auxiliary variables (V) will not be used in GM. Please consider GMN and GMSS to leverage V.")
-  }
-
-  if(ncol(V) <= 10 & method =='GMSS'){
-    warning("Number of node-level auxiliary variables <= 10, not advised to select and change to GMN.")
-  }
-
-  if(ncol(V) > 10 & method =='GMN'){
-    warning("Number of node-level auxiliary variables > 10, advised to select and change to GMSS.")
-  }
-
-  if(is.null(V) & (method == 'GMN' | method == 'GMSS')){
-    warning('node-level auxiliary variables (V) must be provided in GMN and GMSS. Change to GM.')
-    method <- 'GM'
-  }
-
-  if (is.null(colnames(Y)) & is.null(rownames(V)))
-    colnames(Y) <- rownames(V) <- paste0("Node_", 1:ncol(Y))
-  else if (is.null(colnames(Y))) colnames(Y) <- rownames(V)
-  else if (is.null(rownames(V))) rownames(V) <- colnames(Y)
-  else if (any(colnames(Y) != rownames(V)))
-    stop("The provided column names of Y and row names of V must be the same.")
-
-  if (is.null(rownames(Y))) rownames(Y) <- paste0("Ind_", 1:nrow(Y))
-  if (is.null(colnames(V))) colnames(V) <- paste0("Var_", 1:ncol(V))
 
   if(!is.null(version) & (method == 'GMN' | method == 'GMSS')){
     warning("version is not used in GMN & GMSS.")

@@ -66,9 +66,8 @@
 #'
 #'  @param maxit Scalar: maximum number of iterations allowed (default is 1000).
 #'
-#'  @param transformV Logical; if \code{TRUE} (default) and not ranged within [0,1],
-#'  \code{V} will be standardised within \code{navigss} call.
-#'  Otherwise, \code{V} will not be transformed, and can be preprocessed by users.
+#'  @param transformV Logical; if \code{FALSE} (default), \code{V} will not be transformed;
+#'  Otherwise and if \code{V} does not range within [0,1],  \code{V} will be standardised within \code{navigss} call.
 #'
 #'  @param verbose Logical; if \code{TRUE} (default), standard verbosity; otherwise, no messages.
 #'
@@ -138,14 +137,14 @@
 #' Y <- matrix(rnorm(N*P), nrow = N, ncol = P)
 #'
 #' # estimate precision matrix based on Y and meanwhile leverage node-level variables V
-#' res_navigss <-navigss(Y, V, transformV = F)
-#' # res_navigss <- navigss(Y, V, method = 'GMN', transformV = F)
-#' # res_navigss <- navigss(Y, V, method = 'GM', version = 1, transformV = F)
-#' # res_navigss <- navigss(Y, V, method = 'GM', version = 2, transformV = F)
-#' # res_navigss <- navigss(Y, V, inference = 'EM', transformV = F)
-#' # res_navigss <- navigss(Y, V, method = 'GMN', inference = 'EM', transformV = F)
-#' # res_navigss <- navigss(Y, V, method = 'GM', inference = 'EM', version = 1, transformV = F)
-#' # res_navigss <- navigss(Y, V, method = 'GM', inference = 'EM', version = 2, transformV = F)
+#' res_navigss <-navigss(Y, V)
+#' # res_navigss <- navigss(Y, V, method = 'GMN')
+#' # res_navigss <- navigss(Y, V, method = 'GM', version = 1)
+#' # res_navigss <- navigss(Y, V, method = 'GM', version = 2)
+#' # res_navigss <- navigss(Y, V, inference = 'EM')
+#' # res_navigss <- navigss(Y, V, method = 'GMN', inference = 'EM')
+#' # res_navigss <- navigss(Y, V, method = 'GM', inference = 'EM', version = 1)
+#' # res_navigss <- navigss(Y, V, method = 'GM', inference = 'EM', version = 2)
 #'
 #' @import doParallel parallel foreach matrixcalc
 #' @export
@@ -163,7 +162,7 @@ navigss <- function(Y, V =NULL,
                     track_ELBO = F, debug = F,
                     version = NULL,
                     # transformY = T,# as mean is 0, always centre Y
-                    transformV = T,
+                    transformV = F,
                     full_output = F) {
 
   # Time
@@ -186,8 +185,10 @@ navigss <- function(Y, V =NULL,
   }
 
   #
-  if (verbose) cat("== Parallel exploration of a ", ifelse(method =='GMSS' & inference == 'EM', 'double', ''),
-                   "grid of spike standard deviations ", list_hyper$v0_v," on ",numCores," cores ... \n\n")
+  if (verbose) cat("== Parallel exploration of a", ifelse(method =='GMSS' & inference == 'EM', "double", ""),
+                   "grid of spike standard deviations \n v0 = ", list_hyper$v0_v, "\n",
+                   ifelse(method =='GMSS' & inference == 'EM',paste0("and s0 = ", paste(list_hyper$s0_v, collapse = ' '), '\n') , ""),
+                   "on ",numCores," cores ... \n\n")
 
   # keep all the checks & steps inside navigss_core
   # to make it work standalone
@@ -211,8 +212,8 @@ navigss <- function(Y, V =NULL,
                    transformV = transformV)
     }
   }else{
-    out <- foreach (v0 = v0_v) %:%
-      foreach(s0 = s0_v)%dopar% {
+    out <- foreach (v0 = list_hyper$v0_v) %:%
+      foreach(s0 = list_hyper$s0_v)%dopar% {
         list_hyper$v0 <- v0
         list_hyper$s0 <- s0
         navigss_core(Y = Y,
@@ -235,38 +236,97 @@ navigss <- function(Y, V =NULL,
 
   if (verbose) cat("... done. == \n\n")
 
-  if (verbose) cat("== Select from a grid of spike variance by ",criterion," ... \n\n")
+  if (verbose) cat("== Select from a grid of spike variance using",criterion," ... \n\n")
 
   if(criterion == 'AIC'){
 
-    vec_criterion <- sapply(out, function(x){AIC_GSS(x$estimates,N = nrow(x$args$Y))})
+    if(!(method =='GMSS' & inference == 'EM')){
+      vec_criterion <- sapply(out, function(x){AIC_GSS(x$estimates,N = nrow(x$args$Y))})
+    }else{
+      vec_criterion <- do.call('rbind',lapply(out, function(x){
+        sapply(x, function(y){
+          AIC_GSS(y$estimates,N = nrow(y$args$Y))
+        })
+      }))}
+
 
   }else if(criterion == 'BIC'){
 
-    vec_criterion <- sapply(out, function(x){BIC_GSS(x$estimates,N = nrow(x$args$Y))})
+    if(!(method =='GMSS' & inference == 'EM')){
+      vec_criterion <- sapply(out, function(x){BIC_GSS(x$estimates,N = nrow(x$args$Y))})
+    }else{
+      vec_criterion <- do.call('rbind',lapply(out, function(x){
+        sapply(x, function(y){
+          BIC_GSS(y$estimates,N = nrow(y$args$Y))
+        })
+      }))
+    }
 
   }else if(criterion == 'EBIC'){
 
-    vec_criterion <- sapply(out, function(x){EBIC_GSS(x$estimates, N = nrow(x$args$Y), P = ncol(x$args$Y))})
+
+    if(!(method =='GMSS' & inference == 'EM')){
+      vec_criterion <- sapply(out, function(x){EBIC_GSS(x$estimates,N = nrow(x$args$Y))})
+    }else{
+      vec_criterion <- do.call('rbind',lapply(out, function(x){
+        sapply(x, function(y){
+          EBIC_GSS(y$estimates,N = nrow(y$args$Y))
+        })
+      }))
+    }
 
   }
+  if(!(method =='GMSS' & inference == 'EM')){
+    index <- which.min(vec_criterion)
 
-  index <- which.min(vec_criterion)
+    if(index == 1){
+      warning('The selected v0 reaches the lower bound in the grid. Consider extend the grid to lower values. ')
+    }else if(index == length(list_hyper$v0_v)){
+      warning('The selected v0 reaches the upper bound in the grid. Consider extend the grid to higher values. ')
+    }
 
-  if(index == 1){
-    warning('The selected v0 reaches the lower bound in the grid. Consider extend the grid to lower values. ')
-  }else if(index == length(list_hyper$v0_v)){
-    warning('The selected v0 reaches the upper bound in the grid. Consider extend the grid to higher values. ')
+  }else{
+    index <- which(vec_criterion == min(vec_criterion), arr.ind = TRUE)
+
+    if(length(index) != 2){
+      warning('More than one best index choices \n')
+      if(verbose){
+        cat('These indices are all equally the best: \n')
+        print(index)
+      }
+      index <- index[1,]
+    }
+
+    if(index[1] == 1){
+      warning('The selected v0 reaches the lower bound in the grid. Consider extend the grid to lower values. ')
+    }else if(index[1] == length(list_hyper$v0_v)){
+      warning('The selected v0 reaches the upper bound in the grid. Consider extend the grid to higher values. ')
+    }
+    if(index[2] == 1){
+      warning('The selected s0 reaches the lower bound in the grid. Consider extend the grid to lower values. ')
+    }else if(index[2] == length(list_hyper$s0_v)){
+      warning('The selected s0 reaches the upper bound in the grid. Consider extend the grid to higher values. ')
+    }
   }
+
+
 
   if (verbose) cat("... done. == \n\n")
 
-  if(verbose) cat("Select the index ", index, " i.e., v0 = ", list_hyper$v0_v[index], ", the best ",criterion, " = ", vec_criterion[index], '.\n\n')
-
+  if(!(method =='GMSS' & inference == 'EM')){
+    if(verbose) cat("Select the index", index, " i.e., v0 = ", list_hyper$v0_v[index], ", the best",criterion, " = ", vec_criterion[index], '.\n\n')
+  }else{
+    if(verbose) cat("Select the index", index, " i.e., v0 = ", list_hyper$v0_v[index[1]] ," and s0 = ", list_hyper$s0_v[index[2]], ",the best",criterion, " = ", vec_criterion[index[1], index[2]], '.\n\n')
+  }
   pt <- Sys.time() - pt
-  cat('Total runtime: ',format(pt), '\n')
+  cat('Total runtime: ',format(pt), '.\n')
 
-  ans <- out[[index]]
+  if(!(method =='GMSS' & inference == 'EM')){
+
+    ans <- out[[index]]
+  }else{
+    ans <- out[[index[1]]][[index[2]]]
+  }
   ans <- c(ans,
            list(
              index = index,

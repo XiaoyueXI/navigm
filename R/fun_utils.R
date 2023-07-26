@@ -313,3 +313,82 @@ get_n0_t02 <- function(p, p_star) {
 
 
 
+generate_data_from_adjancency <- function(N,
+                                          A,
+                                          vec_magnitude = c(0.25, 0.75),
+                                          bool_scale = TRUE) {
+
+  # same generation procedure as in Learning Graphical Models With Hubs, JMLR, 2014, P.3307
+  P <- nrow(A)
+  nb_edges <- sum(A == 1)
+
+  # matrix E
+  E <- A
+
+  E[A == 1] <- runif(nb_edges, min = vec_magnitude[1], max = vec_magnitude[2])
+
+  E_bar <- (E + t(E)) / 2
+
+  msign <- matrix(1, nrow = nrow(E), ncol = ncol(E))
+  msign[upper.tri(msign)] <- sample(c(-1,1), size = sum(upper.tri(msign)),  prob = c(0.5, 0.5), replace = TRUE)
+  msign[lower.tri(msign)] <- t(msign)[lower.tri(msign)]
+  E_bar <- E_bar * msign
+
+  # minimum eigenvalue
+  min_eigen <- min(eigen(E_bar, only.values = TRUE)$values)
+
+  if (min_eigen < 0) {
+    Omega <- E_bar + (0.1 - min_eigen) * diag(P)
+  } else{
+    Omega <- E_bar + 0.1 * diag(P)
+  }
+
+  Y <- mvtnorm::rmvnorm(N, rep(0, P), solve(Omega))
+
+  if (bool_scale) {
+    Y <- scale(Y)
+  }
+
+  create_named_list_(A, Omega, Y)
+
+}
+
+
+generate_V <- function(P, Q, alpha, beta, Sigma, min_gene, verbose = F) {
+  library(MASS)
+
+  #
+  if(P < Q){
+    Z <- mvrnorm(n = P,
+                 mu = rep(0, nrow(Sigma)),
+                 Sigma)
+
+  }else{
+    Z <- mvrnorm(n = P,
+                 mu = rep(0, nrow(Sigma)),
+                 Sigma,
+                 empirical = T)
+  }
+
+  bool_up <- upper.tri(cor(Z))
+  V <- t(qbeta(t(pnorm(Z, 0, sqrt(
+    diag(Sigma)
+  ))), alpha, beta))
+
+  cat('Range of empirical correlations:', range(cor(V)[bool_up]), '\n')
+  cat('Range of absolute empirical correlations:', range(abs(cor(V)[bool_up])), '\n')
+
+  # set min_gene to ensure the enough signals for each codata
+  Vnz <- apply(V, 2, function(x)
+    sum(x > 0.5))
+  if (verbose)
+    cat(sum(Vnz < min_gene),
+        ' variant(s) do not have significant effects on gene expression.')
+  if (any(Vnz < min_gene)) {
+    for (j in which(Vnz < min_gene)) {
+      V[sample(P, min_gene), j] <- runif(min_gene, 0.9, 1)
+    }
+  }
+  return(V)
+}
+
