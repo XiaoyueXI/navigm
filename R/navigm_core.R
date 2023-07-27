@@ -1,5 +1,5 @@
-# This file is part of the `navigss` R package:
-#     https://github.com/XiaoyueXI/navigss
+# This file is part of the `navigm` R package:
+#     https://github.com/XiaoyueXI/navigm
 
 
 #' Node-level auxiliary variable informed Gaussian spike-and-slab.
@@ -7,7 +7,7 @@
 #' This function performs simultaneous Gaussian spike-and-slab inference and node-level auxiliary variable selections.
 #'
 #' @param Y Data matrix of dimension N x P, where N is the number of samples and P is the number of nodes in the graph.
-#'   \code{Y} will be centred within \code{navigss_core} call.
+#'   \code{Y} will be centred within \code{navigm_core} call.
 #'
 #' @param V Input matrix of dimension P x Q, where Q is the number of candidate auxiliary variables. No need to supply intercept.
 #'   If \code{V} is not specified, set \code{method = 'GM'}.
@@ -62,7 +62,7 @@
 #'  @param maxit Scalar: maximum number of iterations allowed (default is 1000).
 #'
 #'  @param transformV Logical; if \code{FALSE} (default), \code{V} will not be transformed;
-#'  Otherwise and if \code{V} does not range within [0,1],  \code{V} will be standardised within \code{navigss} call.
+#'  Otherwise and if \code{V} does not range within [0,1],  \code{V} will be standardised within \code{navigm} call.
 #'
 #'  @param verbose Logical; if \code{TRUE} (default), standard verbosity; otherwise, no messages.
 #'
@@ -75,7 +75,7 @@
 #'  @param version Integer; take values of 1 (a beta prior on edge inclusion) or 2 (a normal prior on probit edge inclusion) only.
 #'  Only valid when \code{method = 'GM'}.
 #'
-#'  @details \code{navigss_core} implements a Gaussian graphical model
+#'  @details \code{navigm_core} implements a Gaussian graphical model
 #'   that allows incorporating and selecting node-level auxiliary variables,
 #'   thereby enhancing the detection of conditional dependence. Inference is
 #'   carried out using a scalable (variational) expectation maximisation
@@ -124,21 +124,21 @@
 #' Y <- matrix(rnorm(N*P), nrow = N, ncol = P)
 #'
 #' # estimate precision matrix based on Y and meanwhile leverage node-level variables V
-#' res_navigss_core <-navigss_core(Y, V)
-#' # res_navigss_core <- navigss_core(Y, V, method = 'GMN')
-#' # res_navigss_core <- navigss_core(Y, V, method = 'GM', version = 1)
-#' # res_navigss_core <- navigss_core(Y, V, method = 'GM', version = 2)
-#' # res_navigss_core <- navigss_core(Y, V, inference = 'EM')
-#' # res_navigss_core <- navigss_core(Y, V, method = 'GMN', inference = 'EM')
-#' # res_navigss_core <- navigss_core(Y, V, method = 'GM', inference = 'EM', version = 1)
-#' # res_navigss_core <- navigss_core(Y, V, method = 'GM', inference = 'EM', version = 2)
+#' res_navigm_core <-navigm_core(Y, V)
+#' # res_navigm_core <- navigm_core(Y, V, method = 'GMN')
+#' # res_navigm_core <- navigm_core(Y, V, method = 'GM', version = 1)
+#' # res_navigm_core <- navigm_core(Y, V, method = 'GM', version = 2)
+#' # res_navigm_core <- navigm_core(Y, V, inference = 'EM')
+#' # res_navigm_core <- navigm_core(Y, V, method = 'GMN', inference = 'EM')
+#' # res_navigm_core <- navigm_core(Y, V, method = 'GM', inference = 'EM', version = 1)
+#' # res_navigm_core <- navigm_core(Y, V, method = 'GM', inference = 'EM', version = 2)
 #'
 #' @import matrixcalc
 #' @export
 #'
 
 
-navigss_core <- function(Y, V =NULL,
+navigm_core <- function(Y, V =NULL,
                          method = 'GMSS',
                          inference = 'VBEM',
                          list_hyper = NULL, list_init = NULL,
@@ -158,6 +158,7 @@ navigss_core <- function(Y, V =NULL,
   }
 
   if(!is.null(V)){
+
     if(ncol(Y)!=nrow(V)){
       stop('Columns of Y and rows of V must match.')
     }
@@ -260,7 +261,7 @@ navigss_core <- function(Y, V =NULL,
 
   if(inference == 'EM'){
 
-    res_navigss <- navigss_em_core(Y = Y,
+    res_navigm <- navigm_em_core(Y = Y,
                                    V = V,
                                    method = method,
                                    list_hyper = list_hyper,
@@ -272,7 +273,7 @@ navigss_core <- function(Y, V =NULL,
                                    debug = debug,
                                    version = version)
   }else if(inference == 'VBEM'){
-    res_navigss <- navigss_vbem_core(Y = Y,
+    res_navigm <- navigm_vbem_core(Y = Y,
                                      V = V,
                                      method = method,
                                      list_hyper = list_hyper,
@@ -285,7 +286,7 @@ navigss_core <- function(Y, V =NULL,
                                      version = version)
   }
 
-  return(res_navigss)
+  return(res_navigm)
 }
 
 

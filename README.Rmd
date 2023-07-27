@@ -7,9 +7,9 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
-# navigss
+# navigm
 
-The `navigss` is an R package that implements the graphical spike-and-slab in Gaussian graphical models. Besides the primary measurements of variables, this package allows for incorporating node-level auxiliary variables. The method is tailored to improve the detection of conditional independence by leveraging node-level information while selecting useful node-level variables that influence the graph structure. The package implements a scalable variational Bayes expectation-maximization algorithm to obtain the approximated posterior distribution of the model parameters and the posterior mode of precision matrices.
+The `navigm` is an R package that implements the graphical spike-and-slab in Gaussian graphical models. Besides the primary measurements of variables, this package allows for incorporating node-level auxiliary variables. The method is tailored to improve the detection of conditional independence by leveraging node-level information while selecting useful node-level variables that influence the graph structure. The package implements a scalable variational Bayes expectation-maximization algorithm to obtain the approximated posterior distribution of the model parameters and the posterior mode of precision matrices.
 
 The package offers several modeling options, including whether to incorporate node-level variables and whether to make the selection of variables. Additionally, it provides deterministic inference options, such as full expectation maximization and variational Bayes expectation-maximization algorithms.
 
@@ -20,16 +20,16 @@ Reference: Xiaoyue Xi, Sylvia Richardson, Helene Ruffieux, 2023. A hierarchical 
 The package can be installed in R by
 ```{r install, eval=F}
 if(!require(remotes)) install.packages("remotes")
-remotes::install_github("XiaoyueXI/navigss")
+remotes::install_github("XiaoyueXI/navigm")
 ```
 
 
 ```{r personal install, eval=T, include=F}
-devtools::load_all('~/navigss/')
+devtools::load_all('~/navigm/')
 ```
 
 ## Example
-The main function ``navigss`` takes a data matrix of dimension N x P, where N is the sample size and P is the graph size. It allows for another input matrix of dimension P x Q, which comprises node-level auxiliary variables and may inform the centrality of nodes, where Q is the number of auxiliary variables. We illustrate three modeling choices as follows. In each model, we provide two choices of inference algorithms.
+The main function ``navigm`` takes a data matrix of dimension N x P, where N is the sample size and P is the graph size. It allows for another input matrix of dimension P x Q, which comprises node-level auxiliary variables and may inform the centrality of nodes, where Q is the number of auxiliary variables. We illustrate three modeling choices as follows. In each model, we provide two choices of inference algorithms.
 
 
 ### Graphical spike-and-slab
@@ -54,16 +54,16 @@ print(str(net$Y))
 
 #### Inference using expectation maximization
 
-We then input the simulated data ``net$Y`` into the ``navigss`` and infer the precision matrix by spike-and-slab Gaussian graphical models using expectation maximization. 
+We then input the simulated data ``net$Y`` into the ``navigm`` and infer the precision matrix by spike-and-slab Gaussian graphical models using expectation maximization. 
 ```{r gmem, eval = T, include = T}
-gm_em <- navigss(Y = net$Y, method = 'GM', inference = 'EM', version = 1)
+gm_em <- navigm(Y = net$Y, method = 'GM', inference = 'EM', version = 1)
 ```
 
 
 #### Inference using variational Bayes expectation maximization
 The following command uses the variational expectation maximization algorithm for graphical spike-and-slab inference. 
 ```{r gmvbem, eval = T, include = T}
-gm_vbem <- navigss(Y = net$Y, method = 'GM', version = 1)
+gm_vbem <- navigm(Y = net$Y, method = 'GM', version = 1)
 ```
 
 
@@ -106,16 +106,16 @@ print(str(net$Y))
 
 #### Inference using expectation maximization
 
-We then input the simulated data ``net$Y``and ``V`` into the ``navigss`` and infer the precision matrix by spike-and-slab Gaussian graphical models with normal priors on auxiliary variable coefficients using expectation maximization. 
+We then input the simulated data ``net$Y``and ``V`` into the ``navigm`` and infer the precision matrix by spike-and-slab Gaussian graphical models with normal priors on auxiliary variable coefficients using expectation maximization. 
 ```{r gmnem, eval = T, include = T}
-gmn_em <- navigss(Y = net$Y, V = V, method = 'GMN', inference = 'EM')
+gmn_em <- navigm(Y = net$Y, V = V, method = 'GMN', inference = 'EM')
 ```
 
 
 #### Inference using variational Bayes expectation maximization
 To use the variational expectation maximization, we implement the command as follows.
 ```{r gmnvbem, eval = T, include = T}
-gmn_vbem <- navigss(Y = net$Y, V = V, method = 'GMN')
+gmn_vbem <- navigm(Y = net$Y, V = V, method = 'GMN')
 ```
 
 
@@ -155,16 +155,16 @@ print(str(net$Y))
 
 #### Inference using expectation maximization
 
-We then input the simulated data ``net$Y``and ``V`` into the ``navigss`` and infer the precision matrix by spike-and-slab Gaussian graphical models with spike-and-slab priors on auxiliary variable coefficients using expectation maximization. 
+We then input the simulated data ``net$Y``and ``V`` into the ``navigm`` and infer the precision matrix by spike-and-slab Gaussian graphical models with spike-and-slab priors on auxiliary variable coefficients using expectation maximization. 
 ```{r gmssem, eval = T, include = T}
-gmss_em <- navigss(Y = net$Y, V = V, method = 'GMSS', inference = 'EM')
+gmss_em <- navigm(Y = net$Y, V = V, method = 'GMSS', inference = 'EM')
 ```
 
 
 #### Inference using variational Bayes expectation maximization
 To use the variational expectation maximization algorithm, we implement the command
 ```{r gmssvbem, eval = T, include = T}
-gmss_vbem <- navigss(Y = net$Y, V = V, method = 'GMSS')
+gmss_vbem <- navigm(Y = net$Y, V = V, method = 'GMSS')
 ```
 
 

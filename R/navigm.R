@@ -1,5 +1,5 @@
-# This file is part of the `navigss` R package:
-#     https://github.com/XiaoyueXI/navigss
+# This file is part of the `navigm` R package:
+#     https://github.com/XiaoyueXI/navigm
 
 
 #' Node-level auxiliary variable informed Gaussian spike-and-slab with model selection.
@@ -8,7 +8,7 @@
 #' The continuous spike-and-slab priors require exploring a grid of spike variance and selecting model.
 #'
 #' @param Y Data matrix of dimension N x P, where N is the number of samples and P is the number of nodes in the graph.
-#'   \code{Y} will be centred within \code{navigss} call.
+#'   \code{Y} will be centred within \code{navigm} call.
 #'
 #' @param V Input matrix of dimension P x Q, where Q is the number of candidate auxiliary variables. No need to supply intercept.
 #'   If \code{V} is not specified, set \code{method = 'GM'}.
@@ -67,7 +67,7 @@
 #'  @param maxit Scalar: maximum number of iterations allowed (default is 1000).
 #'
 #'  @param transformV Logical; if \code{FALSE} (default), \code{V} will not be transformed;
-#'  Otherwise and if \code{V} does not range within [0,1],  \code{V} will be standardised within \code{navigss} call.
+#'  Otherwise and if \code{V} does not range within [0,1],  \code{V} will be standardised within \code{navigm} call.
 #'
 #'  @param verbose Logical; if \code{TRUE} (default), standard verbosity; otherwise, no messages.
 #'
@@ -83,7 +83,7 @@
 #'  @param full_output Logical; if \code{FALSE}, the estimation for the selected model is returned.
 #'  Otherwise, the estimations are returned for all the explored models.
 #'
-#'  @details \code{navigss} implements a Gaussian graphical model
+#'  @details \code{navigm} implements a Gaussian graphical model
 #'   that allows incorporating and selecting node-level auxiliary variables,
 #'   thereby enhancing the detection of conditional dependence. Inference is
 #'   carried out using a scalable (variational) expectation maximisation
@@ -137,21 +137,21 @@
 #' Y <- matrix(rnorm(N*P), nrow = N, ncol = P)
 #'
 #' # estimate precision matrix based on Y and meanwhile leverage node-level variables V
-#' res_navigss <-navigss(Y, V)
-#' # res_navigss <- navigss(Y, V, method = 'GMN')
-#' # res_navigss <- navigss(Y, V, method = 'GM', version = 1)
-#' # res_navigss <- navigss(Y, V, method = 'GM', version = 2)
-#' # res_navigss <- navigss(Y, V, inference = 'EM')
-#' # res_navigss <- navigss(Y, V, method = 'GMN', inference = 'EM')
-#' # res_navigss <- navigss(Y, V, method = 'GM', inference = 'EM', version = 1)
-#' # res_navigss <- navigss(Y, V, method = 'GM', inference = 'EM', version = 2)
+#' res_navigm <- navigm(Y, V)
+#' # res_navigm <- navigm(Y, V, method = 'GMN')
+#' # res_navigm <- navigm(Y, V, method = 'GM', version = 1)
+#' # res_navigm <- navigm(Y, V, method = 'GM', version = 2)
+#' # res_navigm <- navigm(Y, V, inference = 'EM')
+#' # res_navigm <- navigm(Y, V, method = 'GMN', inference = 'EM')
+#' # res_navigm <- navigm(Y, V, method = 'GM', inference = 'EM', version = 1)
+#' # res_navigm <- navigm(Y, V, method = 'GM', inference = 'EM', version = 2)
 #'
 #' @import doParallel parallel foreach matrixcalc
 #' @export
 #'
 
 
-navigss <- function(Y, V =NULL,
+navigm <- function(Y, V =NULL,
                     method = 'GMSS',
                     inference = 'VBEM',
                     criterion = 'AIC',
@@ -190,13 +190,13 @@ navigss <- function(Y, V =NULL,
                    ifelse(method =='GMSS' & inference == 'EM',paste0("and s0 = ", paste(list_hyper$s0_v, collapse = ' '), '\n') , ""),
                    "on ",numCores," cores ... \n\n")
 
-  # keep all the checks & steps inside navigss_core
+  # keep all the checks & steps inside navigm_core
   # to make it work standalone
   #
   if(!(method =='GMSS' & inference == 'EM')){
     out <- foreach (v0 = list_hyper$v0_v) %dopar% {
       list_hyper$v0 <- v0
-      navigss_core(Y = Y,
+      navigm_core(Y = Y,
                    V = V,
                    method = method,
                    inference = inference,
@@ -216,7 +216,7 @@ navigss <- function(Y, V =NULL,
       foreach(s0 = list_hyper$s0_v)%dopar% {
         list_hyper$v0 <- v0
         list_hyper$s0 <- s0
-        navigss_core(Y = Y,
+        navigm_core(Y = Y,
                      V = V,
                      method = method,
                      inference = inference,
@@ -266,17 +266,22 @@ navigss <- function(Y, V =NULL,
 
 
     if(!(method =='GMSS' & inference == 'EM')){
-      vec_criterion <- sapply(out, function(x){EBIC_GSS(x$estimates,N = nrow(x$args$Y))})
+      vec_criterion <- sapply(out, function(x){EBIC_GSS(x$estimates,
+                                                        N = nrow(x$args$Y),
+                                                        P = ncol(x$args$Y))})
     }else{
       vec_criterion <- do.call('rbind',lapply(out, function(x){
         sapply(x, function(y){
-          EBIC_GSS(y$estimates,N = nrow(y$args$Y))
+          EBIC_GSS(y$estimates,
+                   N = nrow(y$args$Y),
+                   P = ncol(x$args$Y))
         })
       }))
     }
 
   }
   if(!(method =='GMSS' & inference == 'EM')){
+
     index <- which.min(vec_criterion)
 
     if(index == 1){
@@ -286,6 +291,7 @@ navigss <- function(Y, V =NULL,
     }
 
   }else{
+
     index <- which(vec_criterion == min(vec_criterion), arr.ind = TRUE)
 
     if(length(index) != 2){

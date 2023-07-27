@@ -1,14 +1,14 @@
-trunc_perf <-  function(perf, fpr.stop) { # perf = list with multiple entry per replication
-
-  for (iperf in seq_along(perf@x.values)){
-    ind = which(perf@x.values[[iperf]] <= fpr.stop)
-    perf@y.values[[iperf]] = perf@y.values[[iperf]][ind]
-    perf@x.values[[iperf]] = perf@x.values[[iperf]][ind]
-  }
-
-  perf
-
-}
+# trunc_perf <-  function(perf, fpr.stop) { # perf = list with multiple entry per replication
+#
+#   for (iperf in seq_along(perf@x.values)){
+#     ind = which(perf@x.values[[iperf]] <= fpr.stop)
+#     perf@y.values[[iperf]] = perf@y.values[[iperf]][ind]
+#     perf@x.values[[iperf]] = perf@x.values[[iperf]][ind]
+#   }
+#
+#   perf
+#
+# }
 
 
 plot_roc <- function(ppi, pat, col, lty = 1,
@@ -52,6 +52,22 @@ plot_ppi <- function(ppi, ppi_names = NULL, col ='black', condition = (ppi >=0.5
        pch = 19, xlab = xlab, ylab = ylab, ...)
 
   segments(which(condition), rep(0,sum(condition)), x1 = which(condition), y1 = ppi[condition])
+
+}
+
+compute_perf <- function(ppi, pat, threshold){
+
+  pat <- as.logical(pat)
+  tpr <- sum(ppi >= 0.5 & pat)/sum(pat)
+  fpr <- sum(ppi >= 0.5 & !pat)/sum(!pat)
+  fnr <- sum(ppi < 0.5 & pat)/sum(pat)
+  tnr <- sum(ppi < 0.5 & !pat)/sum(!pat)
+
+  recall <- tpr
+  precision <-  sum(ppi >= 0.5 & pat)/sum(ppi >= 0.5)
+  f1 <- 2 * (precision * recall) / (precision + recall)
+
+  create_named_list_(tpr, fpr, tnr, fnr, recall, precision, f1)
 
 }
 

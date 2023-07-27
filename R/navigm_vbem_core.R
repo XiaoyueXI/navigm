@@ -1,8 +1,8 @@
-# This file is part of the `navigss` R package:
-#     https://github.com/XiaoyueXI/navigss
+# This file is part of the `navigm` R package:
+#     https://github.com/XiaoyueXI/navigm
 
 
-navigss_vbem_core <- function(Y, V =NULL,
+navigm_vbem_core <- function(Y, V =NULL,
                               method = 'GMSS',
                               list_hyper = NULL, list_init = NULL,
                               tol = 0.1, maxit = 1000,

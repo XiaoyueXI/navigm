@@ -1,5 +1,5 @@
-# This file is part of the `navigss` R package:
-#     https://github.com/XiaoyueXI/navigss
+# This file is part of the `navigm` R package:
+#     https://github.com/XiaoyueXI/navigm
 #
 # Internal functions to call the variational EM algorithm for GMSS
 
