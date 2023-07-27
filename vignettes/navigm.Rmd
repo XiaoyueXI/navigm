@@ -1,0 +1,300 @@
+---
+title: "navigm"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{navigm}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(navigm)
+```
+
+The main function ``navigm`` takes a data matrix of dimension N x P, where N is the sample size and P is the graph size. It allows for another input matrix of dimension P x Q, which comprises node-level auxiliary variables and may inform the centrality of nodes, where Q is the number of auxiliary variables. We illustrate three modeling choices as follows. In each model, we provide two choices of inference algorithms.
+
+
+### Graphical spike-and-slab
+We start with a simple example when no node-level variables are provided. 
+
+#### Data simulation
+We simulate a random network of size $P = 50$, of which edges are included with probability 0.01. We then simulate the precision matrix following the adjacency structure. $N = 100$ samples are then generated from a multivariate normal distribution with mean **0** and the simulated precision matrix.
+
+```{r generate, eval = T, include = T}
+set.seed(123)
+
+P <- 50
+A <- matrix(rbinom(P ^ 2, 1, 0.01), nrow = P, ncol = P)
+diag(A) <- 0
+A[lower.tri(A)] <- t(A[upper.tri(A)])
+
+N <- 100
+net <-  generate_data_from_adjancency(N = N, A = A)
+
+print(str(net$Y))
+```
+
+#### Inference using expectation maximization
+
+We then input the simulated data ``net$Y`` into the ``navigm`` and infer the precision matrix by spike-and-slab Gaussian graphical models using expectation maximization. 
+```{r gmem, eval = T, include = T}
+gm_em <- navigm(Y = net$Y, method = 'GM', inference = 'EM', version = 1)
+```
+
+
+#### Inference using variational Bayes expectation maximization
+The following command uses the variational expectation maximization algorithm for graphical spike-and-slab inference. 
+```{r gmvbem, eval = T, include = T}
+gm_vbem <- navigm(Y = net$Y, method = 'GM', version = 1)
+```
+
+
+
+### Graphical spike-and-slab with normal priors on auxiliary variable coefficients
+
+We next simulate a network triggered by three node-level auxiliary variables.
+
+#### Data simulation
+We generate right-skewed beta-distributed node-level variables **V** (for instance, posterior inclusion probabilities from previous studies), and their effect size from a log-normal distribution centered at 0.5 $\beta$, which gives rise to hub propensities **$V\beta$**. Set $\zeta=-1.5$ and we obtain the probability of including the edge $(i,j)$, i.e., $\zeta + \bm{v_{i} \beta} + \bm{v_{j} \beta}$. $N = 100$ samples are then generated from a multivariate normal distribution with mean **0** and the adjacency-guided precision matrix.
+
+```{r generate_normal, eval = T, include = T}
+set.seed(123)
+
+Q <- 3
+Q0 <- 3
+
+#
+V <- generate_V(P, Q, alpha = 0.05, beta = 0.2, Sigma = diag(Q), min_gene = 5) 
+ 
+#
+beta0 <- 0.5
+sig2_beta0 <- 0.1
+beta_true <- rlnorm(Q0, log(beta0), sig2_beta0)
+
+#
+theta <- V %*% matrix(beta_true, ncol = 1)
+pe <- matrix(theta, nrow = P, ncol = P)
+zeta <- -1.5
+pe <- pe + t(pe) + zeta
+pe <- pnorm(pe)
+A <- 0 + (pe >= 0.5)
+diag(A) <- 0
+
+#
+net <-  generate_data_from_adjancency(N = N, A = A)
+
+print(str(net$Y))
+```
+
+#### Inference using expectation maximization
+
+We then input the simulated data ``net$Y``and ``V`` into the ``navigm`` and infer the precision matrix by spike-and-slab Gaussian graphical models with normal priors on auxiliary variable coefficients using expectation maximization. 
+```{r gmnem, eval = T, include = T}
+gmn_em <- navigm(Y = net$Y, V = V, method = 'GMN', inference = 'EM')
+```
+
+
+#### Inference using variational Bayes expectation maximization
+To use the variational expectation maximization, we implement the command as follows.
+```{r gmnvbem, eval = T, include = T}
+gmn_vbem <- navigm(Y = net$Y, V = V, method = 'GMN')
+```
+
+
+
+### Graphical spike-and-slab with spike-and-slab priors on auxiliary variable coefficients
+
+We next consider a scenario where a large number of candidate node-level auxiliary variables are available, and three of them contribute to the node centrality. The selection of "active" node-level auxiliary variables is thus of interest.
+
+#### Data simulation
+We generate the node-level variable matrix of dimension P x Q where $P = 100$ and $Q = 50$, and set most of the effect sizes to zeros, of which three non-null effect sizes are generated  from log normal distribution centered at 0.5 **$\beta$**.
+These gives rise to hub propensities **$V\beta$**. Set $\zeta=-1.5$, we obtain the probability of including the edge $(i,j)$, i.e., $\zeta + \bm{v_{i} \beta} + \bm{v_{j} \beta}$. $N = 100$ samples are then generated from a multivariate normal distribution with mean **0** and the adjacency-guided precision matrix.
+
+```{r generate_ss, eval = T, include = T}
+set.seed(123)
+
+Q <- 50 
+Q0 <- 3
+
+#
+V <- generate_V(P, Q, alpha = 0.05, beta = 0.2, Sigma = diag(Q), min_gene = 5) 
+beta_true_gmss <- rep(0, Q)
+beta_true_gmss[sample(1:Q, Q0)] <- beta_true
+
+#
+theta <- V %*% matrix(beta_true_gmss, ncol = 1)
+pe <- matrix(theta, nrow = P, ncol = P)
+pe <- pe + t(pe) + zeta
+pe <- pnorm(pe)
+A <- 0 + (pe >= 0.5)
+diag(A) <- 0
+
+#
+net <-  generate_data_from_adjancency(N = N, A = A)
+
+print(str(net$Y))
+```
+
+#### Inference using expectation maximization
+
+We then input the simulated data ``net$Y``and ``V`` into the ``navigm`` and infer the precision matrix by spike-and-slab Gaussian graphical models with spike-and-slab priors on auxiliary variable coefficients using expectation maximization. 
+```{r gmssem, eval = T, include = T}
+gmss_em <- navigm(Y = net$Y, V = V, method = 'GMSS', inference = 'EM')
+```
+
+
+#### Inference using variational Bayes expectation maximization
+To use the variational expectation maximization algorithm, we implement the command
+```{r gmssvbem, eval = T, include = T}
+gmss_vbem <- navigm(Y = net$Y, V = V, method = 'GMSS')
+```
+
+
+This shows less computational time for the variational expectation maximization algorithm, especially when we leverage and select useful node-level auxiliary variables, as there is no need for double grid search in two-level continuous spike-and-slabs as in the expectation maximization.
+The main function ``navigm`` takes a data matrix of dimension N x P, where N is the sample size and P is the graph size. It allows for another input matrix of dimension P x Q, which comprises node-level auxiliary variables and may inform the centrality of nodes, where Q is the number of auxiliary variables. We illustrate three modeling choices as follows. In each model, we provide two choices of inference algorithms.
+
+
+### Graphical spike-and-slab
+We start with a simple example when no node-level variables are provided. 
+
+#### Data simulation
+We simulate a random network of size $P = 50$, of which edges are included with probability 0.01. We then simulate the precision matrix following the adjacency structure. $N = 100$ samples are then generated from a multivariate normal distribution with mean **0** and the simulated precision matrix.
+
+```{r generate, eval = T, include = T}
+set.seed(123)
+
+P <- 50
+A <- matrix(rbinom(P ^ 2, 1, 0.01), nrow = P, ncol = P)
+diag(A) <- 0
+A[lower.tri(A)] <- t(A[upper.tri(A)])
+
+N <- 100
+net <-  generate_data_from_adjancency(N = N, A = A)
+
+print(str(net$Y))
+```
+
+#### Inference using expectation maximization
+
+We then input the simulated data ``net$Y`` into the ``navigm`` and infer the precision matrix by spike-and-slab Gaussian graphical models using expectation maximization. 
+```{r gmem, eval = T, include = T}
+gm_em <- navigm(Y = net$Y, method = 'GM', inference = 'EM', version = 1)
+```
+
+
+#### Inference using variational Bayes expectation maximization
+The following command uses the variational expectation maximization algorithm for graphical spike-and-slab inference. 
+```{r gmvbem, eval = T, include = T}
+gm_vbem <- navigm(Y = net$Y, method = 'GM', version = 1)
+```
+
+
+
+### Graphical spike-and-slab with normal priors on auxiliary variable coefficients
+
+We next simulate a network triggered by three node-level auxiliary variables.
+
+#### Data simulation
+We generate right-skewed beta-distributed node-level variables **V** (for instance, posterior inclusion probabilities from previous studies), and their effect size from a log-normal distribution centered at 0.5 $\beta$, which gives rise to hub propensities **$V\beta$**. Set $\zeta=-1.5$ and we obtain the probability of including the edge $(i,j)$, i.e., $\zeta + \bm{v_{i} \beta} + \bm{v_{j} \beta}$. $N = 100$ samples are then generated from a multivariate normal distribution with mean **0** and the adjacency-guided precision matrix.
+
+```{r generate_normal, eval = T, include = T}
+set.seed(123)
+
+Q <- 3
+Q0 <- 3
+
+#
+V <- generate_V(P, Q, alpha = 0.05, beta = 0.2, Sigma = diag(Q), min_gene = 5) 
+ 
+#
+beta0 <- 0.5
+sig2_beta0 <- 0.1
+beta_true <- rlnorm(Q0, log(beta0), sig2_beta0)
+
+#
+theta <- V %*% matrix(beta_true, ncol = 1)
+pe <- matrix(theta, nrow = P, ncol = P)
+zeta <- -1.5
+pe <- pe + t(pe) + zeta
+pe <- pnorm(pe)
+A <- 0 + (pe >= 0.5)
+diag(A) <- 0
+
+#
+net <-  generate_data_from_adjancency(N = N, A = A)
+
+print(str(net$Y))
+```
+
+#### Inference using expectation maximization
+
+We then input the simulated data ``net$Y``and ``V`` into the ``navigm`` and infer the precision matrix by spike-and-slab Gaussian graphical models with normal priors on auxiliary variable coefficients using expectation maximization. 
+```{r gmnem, eval = T, include = T}
+gmn_em <- navigm(Y = net$Y, V = V, method = 'GMN', inference = 'EM')
+```
+
+
+#### Inference using variational Bayes expectation maximization
+To use the variational expectation maximization, we implement the command as follows.
+```{r gmnvbem, eval = T, include = T}
+gmn_vbem <- navigm(Y = net$Y, V = V, method = 'GMN')
+```
+
+
+
+### Graphical spike-and-slab with spike-and-slab priors on auxiliary variable coefficients
+
+We next consider a scenario where a large number of candidate node-level auxiliary variables are available, and three of them contribute to the node centrality. The selection of "active" node-level auxiliary variables is thus of interest.
+
+#### Data simulation
+We generate the node-level variable matrix of dimension P x Q where $P = 100$ and $Q = 50$, and set most of the effect sizes to zeros, of which three non-null effect sizes are generated  from log normal distribution centered at 0.5 **$\beta$**.
+These gives rise to hub propensities **$V\beta$**. Set $\zeta=-1.5$, we obtain the probability of including the edge $(i,j)$, i.e., $\zeta + \bm{v_{i} \beta} + \bm{v_{j} \beta}$. $N = 100$ samples are then generated from a multivariate normal distribution with mean **0** and the adjacency-guided precision matrix.
+
+```{r generate_ss, eval = T, include = T}
+set.seed(123)
+
+Q <- 50 
+Q0 <- 3
+
+#
+V <- generate_V(P, Q, alpha = 0.05, beta = 0.2, Sigma = diag(Q), min_gene = 5) 
+beta_true_gmss <- rep(0, Q)
+beta_true_gmss[sample(1:Q, Q0)] <- beta_true
+
+#
+theta <- V %*% matrix(beta_true_gmss, ncol = 1)
+pe <- matrix(theta, nrow = P, ncol = P)
+pe <- pe + t(pe) + zeta
+pe <- pnorm(pe)
+A <- 0 + (pe >= 0.5)
+diag(A) <- 0
+
+#
+net <-  generate_data_from_adjancency(N = N, A = A)
+
+print(str(net$Y))
+```
+
+#### Inference using expectation maximization
+
+We then input the simulated data ``net$Y``and ``V`` into the ``navigm`` and infer the precision matrix by spike-and-slab Gaussian graphical models with spike-and-slab priors on auxiliary variable coefficients using expectation maximization. 
+```{r gmssem, eval = T, include = T}
+gmss_em <- navigm(Y = net$Y, V = V, method = 'GMSS', inference = 'EM')
+```
+
+
+#### Inference using variational Bayes expectation maximization
+To use the variational expectation maximization algorithm, we implement the command
+```{r gmssvbem, eval = T, include = T}
+gmss_vbem <- navigm(Y = net$Y, V = V, method = 'GMSS')
+```
+
+
+This shows less computational time for the variational expectation maximization algorithm, especially when we leverage and select useful node-level auxiliary variables, as there is no need for double grid search in two-level continuous spike-and-slabs as in the expectation maximization.
