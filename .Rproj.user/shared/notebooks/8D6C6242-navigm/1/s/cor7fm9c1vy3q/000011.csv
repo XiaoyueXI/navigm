@@ -1,0 +1,1 @@
+"0","plot_network(gmss_vbem$estimates$m_delta >= 0.5, node_names = 1:P) "

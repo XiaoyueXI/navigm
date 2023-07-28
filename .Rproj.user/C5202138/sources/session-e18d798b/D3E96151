@@ -1,0 +1,26 @@
+{
+    "id": "D3E96151",
+    "path": "~/navigm/R/fun_output.R",
+    "project_path": "R/fun_output.R",
+    "type": "r_source",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1690483744133.0,
+    "source_on_save": false,
+    "relative_order": 2,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "36,0",
+        "scrollLine": "16"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1690218811,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1690218811,
+    "read_only": false,
+    "read_only_alternatives": []
+}

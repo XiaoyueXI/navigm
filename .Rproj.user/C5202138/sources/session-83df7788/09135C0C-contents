@@ -1,0 +1,1859 @@
+devtools::load_all('~/hubGM.codata/')
+library(data.table)
+library(ggplot2)
+library(ROCR)
+# library("ggsci")
+library(stringr)
+
+
+trunc_perf <-  function(perf, fpr.stop) { # perf = list with multiple entry per replication
+  
+  for (iperf in seq_along(perf@x.values)){
+    ind = which(perf@x.values[[iperf]] <= fpr.stop)
+    perf@y.values[[iperf]] = perf@y.values[[iperf]][ind]
+    perf@x.values[[iperf]] = perf@x.values[[iperf]][ind]
+  }
+  perf
+  
+}
+
+compute_pred <- function(ppi, pat) {
+  
+  # vec_rank <- as.numeric(as.factor(ppi))
+  # vec_pat <- as.numeric(pat)
+  # ROCR::prediction(vec_rank, vec_pat)
+  
+  ROCR::prediction(ppi,pat)
+}
+# compute_pred(list_GMSS, list_true_GMSS)
+
+compute_roc <- function(ppi, pat, col, lty = 1, add = FALSE, fpr_stop = 1, main = "ROC curves") {
+  
+  require(ROCR)
+  pred <- compute_pred(ppi, pat)
+  perf <- performance(pred, measure = "tpr", x.measure = "fpr")
+  
+  # if (fpr_stop < 1) {
+  #   perf <- trunc_perf(perf, fpr_stop)
+  # }
+
+    plot(perf, col = col, type = "l", lwd = 2, lty = lty,
+         main = main, add = add, xlim = c(0,fpr_stop), ylim = c(0, 1), 
+         avg="vertical", spread.estimate="stderror", spread.scale = 2,
+         show.spread.at = seq(0,fpr_stop,length.out= 11))
+}
+
+
+compute_pauc <- function(ppi, pat,  fpr_stop = 1, standardise = F) {
+  
+  require(ROCR)
+  pred <- compute_pred(ppi, pat)
+  perf <- performance(pred, measure = 'auc',fpr.stop = fpr_stop)
+  pauc <- do.call('c',perf@y.values)
+  if(standardise){
+    # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3744586/
+    pauc <- (1 + (pauc - fpr_stop^2/2)/(fpr_stop - fpr_stop^2/2))/2
+  }
+  return(pauc)
+}
+
+
+
+#################################################
+
+#             results n0 and t02        
+
+#################################################
+# nsd <- 4
+nsd <- 3
+for(dir in c('~/simulation_n_200_p_100_q_3_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0/',
+             '~/simulation_n_200_p_100_q_50_q0_0_zeta_-1.84_noise_0_codata_FALSE_hub_FALSE_corr_0/',
+             '~/simulation_n_200_p_100_q_50_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0/')){
+  setwd(dir)
+  count <- 0
+  list_GMSS <- list_true_GMSS <- list_GMSS_c <- list_true_GMSS_c <- pt <- index <- it <- vb_it <- vector('list', 9)
+    # vector('list', 20)
+  # for(prop in c(0.005, 0.01, 0.03, 0.05, 0.1)){
+  #   for(stddev in c(50, 100, 200, 500)){
+  for(prop in c(0.005, 0.01, 0.03)){
+    for(stddev in c(50, 100, 500)){
+      count <- count + 1
+      list_GMSS[[count]] <- list_true_GMSS[[count]] <- list_GMSS_c[[count]] <- list_true_GMSS_c[[count]] <-
+        pt[[count]] <- index[[count]]<- it[[count]] <- vb_it[[count]]<- vector('list', 32)
+      for(seed in 1:32){
+        load(paste0('out_GMSS_VBEM_noanneal_select_AIC_seed_',seed, '_prior_zeta_prop',prop,'_stddev',stddev,'.rda'))
+        bool_up <- upper.tri(net$A)
+        list_GMSS[[count]][[seed]] <- out$m_delta[bool_up]
+        list_true_GMSS[[count]][[seed]] <- net$A[bool_up]
+        list_GMSS_c[[count]][[seed]] <- out$m_gamma
+        list_true_GMSS_c[[count]][[seed]] <- beta_true!=0
+        tmp <- out$pt
+        units(tmp) <- 'secs'
+        pt[[count]][[seed]] <- tmp
+        index[[count]][[seed]] <- out$index
+        it[[count]][[seed]] <- sapply(out$out, function(x)x$it)
+        vb_it[[count]][[seed]] <- sapply(out$out, function(x)max(x$vec_vb_it))
+      }
+    }
+  }
+
+  # pdf('n0t02_proc_curve.pdf', width = 5 ,height = 4)
+  # pdf('n0t02_proc_curve_reduced.pdf', width = 4 ,height = 4)
+  pdf('n0t02_proc_curve_both_reduced.pdf', width = 7 ,height = 4)
+  par(mfrow=c(1,2), pty='s')
+  cbPalette <- c("#88CCEE", "#CC6677", "#DDCC77", "#117733", "#332288")
+  for(count in 1:length(list_GMSS)){
+    compute_roc(list_GMSS[[count]], list_true_GMSS[[count]], col = cbPalette[(count-1)%/% nsd + 1], 
+                lty = (count-1)%%nsd + 1, add = ifelse(count==1, FALSE, TRUE), fpr_stop = 0.1, 
+                main = 'pROC curves \n (edge selection)')
+  }
+  legend("bottomright",            
+         # legend = c('5e-3', '1e-2', '3e-2', '5e-2', '1e-1','50','100','200', '500'),
+         # lty = c(rep(1,5), 1:4),
+         legend = c('5e-3', '1e-2', '3e-2','50','100', '500'),
+         lty = c(rep(1,3), 1:nsd),
+         cex = 0.5,
+         # col = c(cbPalette, rep('black',4)),
+         col = c(cbPalette[1:3], rep('black',nsd)), 
+         title = 'sparsity SD',ncol=2)
+  
+  # dev.off()
+  
+  # pdf('n0t02_proc_curve_c_reduced.pdf', width = 5 ,height = 4)
+  # par(pty = 's')
+  cbPalette <- c("#88CCEE", "#CC6677", "#DDCC77", "#117733", "#332288")
+  for(count in 1:length(list_GMSS)){
+    try({
+      compute_roc(list_GMSS_c[[count]], list_true_GMSS_c[[count]], col = cbPalette[(count-1)%/% 4 + 1], 
+                  lty = (count-1)%%4 + 1, add = ifelse(count==1, FALSE, TRUE), fpr_stop = 0.1, 
+                  main = 'pROC curves \n (auxiliary variable selection)')
+    })
+  }
+  try({
+    legend("bottomright",            
+           # legend = c('5e-3', '1e-2', '3e-2', '5e-2', '1e-1','50','100','200', '500'),
+           # lty = c(rep(1,5), 1:4),
+           legend = c('5e-3', '1e-2', '3e-2','50','100','500'),
+           lty = c(rep(1,3), 1:nsd),
+           cex = 0.5,
+           # col = c(cbPalette, rep('black',4)), 
+           col = c(cbPalette[1:3], rep('black',nsd)), 
+           title = 'sparsity SD',ncol=2)
+  })
+
+  dev.off()
+  
+  m_gamma <- lapply(list_GMSS_c,function(x)do.call('rbind',x))
+  df_m_gamma <- lapply(m_gamma, function(x)data.table(
+    M=apply(x, 2, mean),
+    SD=apply(x, 2, sd),
+    N=nrow(x),
+    ID = seq_len(ncol(x))
+  ))
+  # names(df_m_gamma) <- paste0(rep(c('5e-3', '1e-2', '3e-2', '5e-2', '1e-1'), each = 4), '_',
+  #                             rep(c('50','100','200', '500'), times = 5))
+  names(df_m_gamma) <- paste0(rep(c('5e-3', '1e-2', '3e-2'), each = nsd), '_',
+                              rep(c('50','100', '500'), times = 3))
+  df_m_gamma <- rbindlist(df_m_gamma, use.names = T,idcol = 'pars')
+  df_m_gamma$spar <- as.numeric(gsub('_[0-9]+$','',df_m_gamma$pars))
+  df_m_gamma$sd <- as.numeric(gsub('^.*_','',df_m_gamma$pars))
+  
+  
+  df_m_gamma[,L:=pmax(M-1.96*SD/sqrt(N), 0)]
+  df_m_gamma[,U:=pmin(M+1.96*SD/sqrt(N),1)]
+  tmp <- data.table(ID= 1:max(df_m_gamma$ID), non_zero = beta_true!=0)
+  df_m_gamma <- merge(df_m_gamma, tmp, by=c('ID'))
+  
+  ggplot(df_m_gamma, aes(x=ID, y=M, color=non_zero)) + 
+    geom_point()+
+    geom_errorbar(aes(ymin=L, ymax=U), width=.2)+
+    labs(x='\n auxiliary variable indices', y = "posterior inclusion probability \n",
+         color = 'active auxiliary variable')+
+    theme_bw() +
+    scale_x_discrete()+
+    scale_y_continuous(expand = c(0,0), limits = c(0,1))+
+    scale_color_manual(breaks = c(FALSE,TRUE), values=c('black','red'))+
+    theme(legend.position = 'bottom',panel.spacing = unit(1, "lines"))+
+    geom_hline(aes(yintercept = 0.5), linetype = 2) +
+    facet_grid(sd~spar)
+  ggsave('n0t0_pip_c_reduced.pdf', width = 10, height = 6)
+  
+  
+}
+# 
+# for(dir in c('~/simulation_n_200_p_100_q_50_q0_0_zeta_-1.84_noise_0_codata_FALSE_hub_FALSE_corr_0/',
+#              '~/simulation_n_200_p_100_q_50_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0/')){
+#   setwd(dir)
+#   count <- 0
+#   list_GM <- list_true_GM <- vector('list', 3)
+#   for(prop in c(0.001, 0.005, 0.01)){
+#     stddev <- 500
+#       count <- count + 1
+#       list_GM[[count]] <- list_true_GM[[count]] <- vector('list', 32)
+#       for(seed in 1:32){
+#         load(paste0('out_GM_VBEM_noanneal_select_AIC_seed_',seed, '_prior_zeta_prop',prop,'_stddev',stddev,'.rda'))
+#         bool_up <- upper.tri(net$A)
+#         list_GM[[count]][[seed]] <- out$m_delta[bool_up]
+#         list_true_GM[[count]][[seed]] <- net$A[bool_up]
+#       }
+#     }
+#   
+#   pdf('n0t02_roc_curve_GM.pdf', width = 5 ,height = 4)
+#   par(pty = 's')
+#   cbPalette <- c("#88CCEE", "#CC6677", "#DDCC77", "#117733", "#332288")
+#   for(count in 1:length(list_GM)){
+#     compute_roc(list_GM[[count]], list_true_GM[[count]], col = cbPalette[count],  lty = 1,
+#                 add = ifelse(count==1, FALSE, TRUE), fpr_stop = 0.1)
+#   }
+#   legend("bottomright",            
+#          legend = c('5e-3', '1e-3', '1e-2'),
+#          lty = 1,
+#          cex = 0.5,
+#          col = cbPalette[1:3], 
+#          title = 'sparsity',ncol=2)
+#   
+#   dev.off()
+#   
+#   
+# }
+
+sapply(lapply(pt, unlist), quantile)
+sapply(lapply(index, unlist), quantile)
+sapply(lapply(index, unlist), function(x)sum(x==1))
+sapply(lapply(index, unlist), function(x)sum(x==16))
+sapply(lapply(it, unlist), quantile)
+sapply(lapply(vb_it, unlist), quantile)
+
+#################################################
+
+#     compare GM, GMN, GMSS and adaptive tol
+
+#################################################
+tpr_gm <- tpr_gmn <- tpr_gmss <- tpr_gmss_c <- tnr_gm <- tnr_gmn <- tnr_gmss <- tnr_gmss_c <-
+  spar_gm <- spar_gmn <- spar_gmss <- list()
+
+pt_gm <- index_gm <- it_gm <- vb_it_gm <- pt_gmn <- index_gmn <- it_gmn <- vb_it_gmn <-
+  pt_gmss <- index_gmss <- it_gmss <- vb_it_gmss <-  list()
+for (dir in c('~/simulation_n_200_p_100_q_3_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0/',
+              '~/simulation_n_200_p_100_q_50_q0_0_zeta_-1.84_noise_0_codata_FALSE_hub_FALSE_corr_0/',
+              '~/simulation_n_200_p_100_q_50_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0/',
+              '~/simulation_n_200_p_100_q_100_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0/')){
+  setwd(dir)
+  list_GM <- list_GMN <- list_GMSS <- list_GMSS_c  <- list_GMSS_adapttol <- list_GMSS_c_adapttol <- list_GMSS_EM <- list_GMSS_EM_c <- vector('list',32)
+  list_true_GM <- list_true_GMN <- list_true_GMSS <- list_true_GMSS_c <-list_true_GMSS_adapttol <- list_true_GMSS_c_adapttol  <-
+    list_true_GMSS_EM <- list_true_GMSS_EM_c <- vector('list',32)
+  
+  pt_gm[[dir]] <- index_gm[[dir]] <- it_gm[[dir]] <- vb_it_gm[[dir]] <- 
+    pt_gmn[[dir]] <- index_gmn[[dir]] <- it_gmn[[dir]] <- vb_it_gmn[[dir]] <- 
+    pt_gmss[[dir]] <- index_gmss[[dir]] <- it_gmss[[dir]] <- vb_it_gmss[[dir]] <- list()
+  for(seed in 1:32){
+    load(paste0('out_GM_VBEM_noanneal_select_AIC_seed_',seed,'_prior_zeta_prop0.01_stddev500.rda'))
+    bool_up <- upper.tri(net$A)
+    list_GM[[seed]] <- out$m_delta[bool_up]
+    list_true_GM[[seed]] <- net$A[bool_up]
+    
+    tmp <- out$pt
+    units(tmp) <- 'secs'
+    pt_gm[[dir]][[seed]] <- tmp
+    index_gm[[dir]][[seed]] <- out$index
+    it_gm[[dir]][[seed]] <- sapply(out$out, function(x)x$it)
+    vb_it_gm[[dir]][[seed]] <- sapply(out$out, function(x)max(x$vec_vb_it))
+    
+    
+    load(paste0('out_GMN_VBEM_noanneal_select_AIC_seed_',seed,'_prior_zeta_prop0.01_stddev500.rda'))
+    list_GMN[[seed]] <- out$m_delta[bool_up]
+    list_true_GMN[[seed]] <- net$A[bool_up]
+    
+    tmp <- out$pt
+    units(tmp) <- 'secs'
+    pt_gmn[[dir]][[seed]] <- tmp
+    index_gmn[[dir]][[seed]] <- out$index
+    it_gmn[[dir]][[seed]] <- sapply(out$out, function(x)x$it)
+    vb_it_gmn[[dir]][[seed]] <- sapply(out$out, function(x)max(x$vec_vb_it))
+    
+    
+    load(paste0('out_GMSS_VBEM_noanneal_select_AIC_seed_',seed,'_prior_zeta_prop0.01_stddev500.rda'))
+    list_GMSS[[seed]] <- out$m_delta[bool_up]
+    list_true_GMSS[[seed]] <- net$A[bool_up]
+    list_GMSS_c[[seed]] <- out$m_gamma
+    list_true_GMSS_c[[seed]] <- beta_true!=0
+    load(paste0('out_GMSS_VBEM_noanneal_adapttol_select_AIC_seed_',seed,'_prior_zeta_prop0.01_stddev500.rda'))
+    list_GMSS_adapttol[[seed]] <- out$m_delta[bool_up]
+    list_true_GMSS_adapttol[[seed]] <- net$A[bool_up]
+    list_GMSS_c_adapttol[[seed]] <- out$m_gamma
+    list_true_GMSS_c_adapttol[[seed]] <- beta_true!=0
+    
+    
+    tmp <- out$pt
+    units(tmp) <- 'secs'
+    pt_gmss[[dir]][[seed]] <- tmp
+    index_gmss[[dir]][[seed]] <- out$index
+    it_gmss[[dir]][[seed]] <- sapply(out$out, function(x)x$it)
+    vb_it_gmss[[dir]][[seed]] <- sapply(out$out, function(x)max(x$vec_vb_it))
+    
+    # load(paste0('out_GMSS_EM_noanneal_select_AIC_seed_',seed,'_prior_zeta_prop0.01_stddev500.rda')) 
+    # list_GMSS_EM[[seed]] <- out$P[bool_up]
+    # list_true_GMSS_EM[[seed]] <- net$A[bool_up]
+    # list_GMSS_EM_c[[seed]] <- out$P2
+    # list_true_GMSS_EM_c[[seed]] <- beta_true!=0
+    
+
+  }
+  
+  tpr_gm[[dir]] <- sapply(1:length(list_true_GM), function(x){sum(list_GM[[x]] >= 0.5 & list_true_GM[[x]] == 1)/sum(list_true_GM[[x]] == 1)})
+  tnr_gm[[dir]] <- sapply(1:length(list_true_GM), function(x){sum(list_GM[[x]] < 0.5 & list_true_GM[[x]] == 0)/sum(list_true_GM[[x]] == 0)})
+  
+  tpr_gmn[[dir]] <- sapply(1:length(list_true_GMN), function(x){sum(list_GMN[[x]] >= 0.5 & list_true_GMN[[x]] == 1)/sum(list_true_GMN[[x]] == 1)})
+  tnr_gmn[[dir]] <- sapply(1:length(list_true_GMN), function(x){sum(list_GMN[[x]] < 0.5 & list_true_GMN[[x]] == 0)/sum(list_true_GMN[[x]] == 0)})
+  
+  tpr_gmss[[dir]] <- sapply(1:length(list_true_GMSS), function(x){sum(list_GMSS[[x]] >= 0.5 & list_true_GMSS[[x]] == 1)/sum(list_true_GMSS[[x]] == 1)})
+  tnr_gmss[[dir]] <- sapply(1:length(list_true_GMSS), function(x){sum(list_GMSS[[x]] < 0.5 & list_true_GMSS[[x]] == 0)/sum(list_true_GMSS[[x]] == 0)})
+  
+  tpr_gmss_c[[dir]] <- sapply(1:length(list_true_GMSS_c), function(x){sum(list_GMSS_c[[x]] >= 0.5 & list_true_GMSS_c[[x]] == 1)/sum(list_true_GMSS_c[[x]] == 1)})
+  tnr_gmss_c[[dir]] <- sapply(1:length(list_true_GMSS_c), function(x){sum(list_GMSS_c[[x]] < 0.5 & list_true_GMSS_c[[x]] == 0)/sum(list_true_GMSS_c[[x]] == 0)})
+  
+  spar_gm[[dir]] <- sapply(1:length(list_true_GM), function(x)sum(list_GM[[x]])/length(list_GM[[x]]))
+  spar_gmn[[dir]] <- sapply(1:length(list_true_GMN), function(x)sum(list_GMN[[x]])/length(list_GMN[[x]]))
+  spar_gmss[[dir]] <- sapply(1:length(list_true_GMSS), function(x)sum(list_GMSS[[x]])/length(list_GMSS[[x]]))
+  
+  pdf('proc_gm_gmn_gmss_noanneal.pdf',width = 5, height = 4)
+  par(pty = 's')
+  compute_roc(list_GM, list_true_GM, add = F, fpr_stop = 0.1, col = 'black', main = 'pROC curves \n (edge selection)')
+  compute_roc(list_GMN, list_true_GMN, add = T, fpr_stop = 0.1, col = 'orange')
+  # compute_roc(list_GM, list_true_GM, add = F, fpr_stop = 1, col = 'black', main = 'pROC curves')
+  # compute_roc(list_GMN, list_true_GMN, add = T, fpr_stop = 1, col = 'orange')
+  if(grepl('q_50_|q_100_',dir)){
+    compute_roc(list_GMSS, list_true_GMSS, add = T, fpr_stop = 0.1, col = 'red')
+  }
+  if(grepl('q_3_',dir)){
+    legend("bottomright",     
+           legend = c("GM-VBEM*","GMN-VBEM"),
+           lty = 1,
+           cex = 0.7,
+           col = c('black','orange'))
+  }
+    if(grepl('q_50_|q_100_',dir))
+    {
+      legend("bottomright",     
+             legend = c("GM-VBEM*","GMN-VBEM","GMSS-VBEM"),
+             lty = 1,
+             cex = 0.7,
+             col = c('black','orange','red'))
+    }  
+  # legend("bottomright",     
+  #        legend = c("GM","GMN","GMSS"),
+  #        # legend = c("GM","GMSS"),
+  #        lty = 1,
+  #        cex = 0.7,
+  #        col = c('black','orange','red'))
+  #        # col = c('black','red'))
+  
+  dev.off()
+  
+  
+
+  tmp <- do.call('rbind',list_GMSS_c)
+  df_m_gamma <- data.table(M = apply(tmp, 2, mean),
+                           SD = apply(tmp, 2, sd),
+                           N = nrow(tmp),
+                           ID = seq_len(ncol(tmp)))
+
+  
+  df_m_gamma[,L:=pmax(M-1.96*SD/sqrt(N), 0)]
+  df_m_gamma[,U:=pmin(M+1.96*SD/sqrt(N),1)]
+  tmp <- data.table(ID= 1:max(df_m_gamma$ID), non_zero = list_true_GMSS_c[[1]]!=0)
+  df_m_gamma <- merge(df_m_gamma, tmp, by=c('ID'))
+  
+  ggplot(df_m_gamma, aes(x=ID, y=M, color=non_zero)) + 
+    geom_point()+
+    geom_errorbar(aes(ymin=L, ymax=U), width=.2)+
+    labs(x='\n  auxiliary variables', y = "posterior inclusion probability \n",
+         color = 'active')+
+    theme_bw() +
+    scale_x_discrete()+
+    scale_y_continuous(expand = c(0,0), limits = c(0,1))+
+    scale_color_manual(breaks = c(FALSE,TRUE), values=c('black','red'))+
+    theme(legend.position = 'bottom',panel.spacing = unit(1, "lines"))+
+    geom_hline(aes(yintercept = 0.5), linetype = 2) 
+  ggsave('n0t0_pip_gmss_c.pdf', width = 6, height = 4)
+  
+  
+
+  
+  pdf('proc_gmss_vbem_adapttol_noanneal.pdf',width = 5, height = 4)
+  par(pty = 's')
+  compute_roc(list_GMSS, list_true_GMSS, add = F, fpr_stop = 0.1, col = 'red', main = 'pROC curves \n (edge selection)')
+  compute_roc(list_GMSS_adapttol, list_true_GMSS_adapttol, add = T, fpr_stop = 0.1, col = 'grey')
+  
+  legend("bottomright",     
+         legend = c("fixed 1e-3","adaptive"),
+         lty = 1,
+         cex = 0.7,
+         col = c('red','grey'))
+  
+  dev.off()  
+  
+  
+  pdf('proc_gmss_vbem_adapttol_noanneal_c.pdf',width = 5, height = 4)
+  par(pty = 's')
+  try({
+    compute_roc(list_GMSS_c, list_true_GMSS_c, add = F, fpr_stop = 0.1, col = 'red', main = 'pROC curves \n (auxiliary variable selection)')
+    compute_roc(list_GMSS_c_adapttol, list_true_GMSS_c_adapttol, add = T, fpr_stop = 0.1, col = 'grey')
+  })
+  
+  try({
+    legend("bottomright",     
+           legend = c("fixed 1e-3","adaptive"),
+           lty = 1,
+           cex = 0.7,
+           col = c('red','grey'))
+  })
+  
+  dev.off()
+  
+}
+
+sapply(lapply(pt_gm, unlist), quantile)
+sapply(lapply(index_gm, unlist), quantile)
+sapply(lapply(index_gm, unlist), function(x)sum(x==1))
+sapply(lapply(index_gm, unlist), function(x)sum(x==16)) # 1 (2)
+sapply(lapply(it_gm, unlist), quantile)
+sapply(lapply(vb_it_gm, unlist), quantile)
+
+sapply(lapply(pt_gmn, unlist), quantile)
+sapply(lapply(index_gmn, unlist), quantile) 
+sapply(lapply(index_gmn, unlist), function(x)sum(x==1))
+sapply(lapply(index_gmn, unlist), function(x)sum(x==16))  # 1 (2-4)
+sapply(lapply(it_gmn, unlist), quantile)
+sapply(lapply(vb_it_gmn, unlist), quantile)
+
+sapply(lapply(pt_gmss, unlist), quantile)
+sapply(lapply(index_gmss, unlist), quantile) 
+sapply(lapply(index_gmss, unlist), function(x)sum(x==1))
+sapply(lapply(index_gmss, unlist), function(x)sum(x==16)) # 1 (1)
+sapply(lapply(it_gmss, unlist), quantile)
+sapply(lapply(vb_it_gmss, unlist), quantile)
+
+
+#################################################
+
+#              GMSS vbem & em
+
+#################################################
+
+pt_em <- index_em <- it_em <- pt_vbem <- index_vbem <- it_vbem <- vb_it_vbem <-  list()
+
+for (dir in c('~/simulation_n_200_p_100_q_3_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0/',
+              '~/simulation_n_200_p_100_q_50_q0_0_zeta_-1.84_noise_0_codata_FALSE_hub_FALSE_corr_0/',
+              '~/simulation_n_200_p_100_q_50_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0/'
+              # ,
+              # '~/simulation_n_200_p_100_q_100_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0/'
+              )){
+  setwd(dir)
+  list_GM <- list_GMN <- list_GMSS <- list_GMSS_c  <- list_GMSS_adapttol <- list_GMSS_c_adapttol <- list_GMSS_EM <- list_GMSS_EM_c <- vector('list',32)
+  list_true_GM <- list_true_GMN <- list_true_GMSS <- list_true_GMSS_c <-list_true_GMSS_adapttol <- list_true_GMSS_c_adapttol  <-
+    list_true_GMSS_EM <- list_true_GMSS_EM_c <- vector('list',32)
+  
+  pt_em[[dir]] <- index_em[[dir]] <- it_em[[dir]] <- vb_it_em[[dir]] <- pt_vbem[[dir]] <- index_vbem[[dir]] <- it_vbem[[dir]] <- vb_it_vbem[[dir]] <- list()
+  for(seed in 1:32){
+    load(paste0('out_GMSS_VBEM_noanneal_select_AIC_seed_',seed,'_prior_zeta_prop0.01_stddev500.rda'))
+    list_GMSS[[seed]] <- out$m_delta[bool_up]
+    list_true_GMSS[[seed]] <- net$A[bool_up]
+    list_GMSS_c[[seed]] <- out$m_gamma
+    list_true_GMSS_c[[seed]] <- beta_true!=0
+    
+    tmp <- out$pt
+    units(tmp) <- 'secs'
+    pt_vbem[[dir]][[seed]] <- tmp
+    index_vbem[[dir]][[seed]] <- out$index
+    it_vbem[[dir]][[seed]] <- sapply(out$out, function(x)x$it)
+    vb_it_vbem[[dir]][[seed]] <- sapply(out$out, function(x)max(x$vec_vb_it))
+    
+    load(paste0('out_GMSS_EM_noanneal_select_AIC_seed_',seed,'_prior_zeta_prop0.01_stddev500.rda'))
+    list_GMSS_EM[[seed]] <- out$P[bool_up]
+    list_true_GMSS_EM[[seed]] <- net$A[bool_up]
+    list_GMSS_EM_c[[seed]] <- out$P2
+    list_true_GMSS_EM_c[[seed]] <- beta_true!=0
+    
+    tmp <- out$pt
+    units(tmp) <- 'secs'
+    pt_em[[dir]][[seed]] <- tmp
+    index_em[[dir]][[seed]] <- out$index
+    it_em[[dir]][[seed]] <- sapply(out$out, function(x)sapply(x,function(y)y$it))
+
+  }
+    
+    pdf('proc_gmss_vbem_em_noanneal.pdf',width = 5, height = 4)
+    par(pty = 's')
+    compute_roc(list_GMSS, list_true_GMSS, add = F, fpr_stop = 0.1, col = 'red', main = 'pROC curves \n (edge selection)')
+    compute_roc(list_GMSS_EM, list_true_GMSS_EM, add = T, fpr_stop = 0.1, col = 'grey')
+    
+    legend("bottomright",     
+           legend = c("VBEM","EM"),
+           lty = 1,
+           cex = 0.7,
+           col = c('red','grey'))
+    
+    dev.off()  
+    
+    
+  
+  pdf('proc_gmss_vbem_em_noanneal_c.pdf',width = 5, height = 4)
+  par(pty = 's')
+  try({
+    compute_roc(list_GMSS_c, list_true_GMSS_c, add = F, fpr_stop = 0.1, col = 'red', main = 'pROC curves \n (auxiliary variable selection)')
+    compute_roc(list_GMSS_EM_c, list_true_GMSS_EM_c, add = T, fpr_stop = 0.1, col = 'grey')
+  })
+  
+  try({
+    legend("bottomright",     
+           legend = c("VBEM","EM"),
+           lty = 1,
+           cex = 0.7,
+           col = c('red','grey'))
+  })
+  
+  dev.off()
+}
+
+sapply(lapply(pt_vbem, unlist), quantile)
+sapply(lapply(index_vbem, unlist), quantile)
+sapply(lapply(index_vbem, unlist), function(x)sum(x==1))
+sapply(lapply(index_vbem, unlist), function(x)sum(x==16)) # 1 (2)
+sapply(lapply(it_vbem, unlist), quantile)
+sapply(lapply(vb_it_vbem, unlist), quantile)
+
+
+sapply(lapply(pt_em, unlist), quantile)
+sapply(lapply(index_em, function(x)do.call('rbind',x)), function(x)apply(x,2,quantile))
+sapply(lapply(index_em, function(x)do.call('rbind',x)), function(x)apply(x,2,function(y)sum(y==1))) # some on ends 
+sapply(lapply(index_em, function(x)do.call('rbind',x)), function(x)apply(x,2,function(y)sum(y==16))) # some on ends
+sapply(lapply(it_em, unlist), quantile)
+
+
+
+# Q 3 Q0 3
+lapply(tpr_gm,function(x)round(quantile(x), 4))[[1]]
+lapply(tpr_gmn,function(x)round(quantile(x), 4))[[1]]
+# lapply(tpr_gmss,function(x)round(quantile(x), 4))[[1]]
+
+lapply(tnr_gm,function(x)round(quantile(x), 4))[[1]]
+lapply(tnr_gmn,function(x)round(quantile(x), 4))[[1]]
+# lapply(tnr_gmss,function(x)round(quantile(x), 4))[[1]]
+
+
+# Q 50 Q0 0
+lapply(tpr_gm,function(x)round(quantile(x), 4))[[2]]
+# lapply(tpr_gmn,function(x)round(quantile(x), 4))[[2]]
+lapply(tpr_gmss,function(x)round(quantile(x), 4))[[2]]
+
+lapply(tnr_gm,function(x)round(quantile(x), 4))[[2]]
+# lapply(tnr_gmn,function(x)round(quantile(x), 4))[[2]]
+lapply(tnr_gmss,function(x)round(quantile(x), 4))[[2]]
+
+# Q 50 Q0 3
+lapply(tpr_gm,function(x)round(quantile(x), 4))[[3]]
+# lapply(tpr_gmn,function(x)round(quantile(x), 4))[[3]]
+lapply(tpr_gmss,function(x)round(quantile(x), 4))[[3]]
+
+lapply(tnr_gm,function(x)round(quantile(x), 4))[[3]]
+# lapply(tnr_gmn,function(x)round(quantile(x), 4))[[3]]
+lapply(tnr_gmss,function(x)round(quantile(x), 4))[[3]]
+
+
+sparsity <- list()
+for(dir in c('~/simulation_n_200_p_100_q_3_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0/',
+             '~/simulation_n_200_p_100_q_50_q0_0_zeta_-1.84_noise_0_codata_FALSE_hub_FALSE_corr_0/',
+             '~/simulation_n_200_p_100_q_50_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0/')){
+  setwd(dir)
+  sparsity[[dir]] <- c()
+  for(seed in 1:32){
+    load(paste0('data_seed',seed,'.rda'))
+    bool_up <- upper.tri(net$A)
+    sparsity[[dir]] <- c(sparsity[[dir]], sum(net$A[bool_up])/sum(bool_up))
+  }
+}
+lapply(sparsity, function(x)round(quantile(x,probs = c(0.025, 0.5, 0.975)), 4))
+
+
+
+pdf('~/sparsity.pdf', width = 10, height = 8)
+par(mfrow = c(3,3))
+for (i in 1:3) {
+  plot(spar_gm[[i]], sparsity[[i]], xlab = 'sparisty (GM)', ylab = 'sparsity (truth)')
+  plot(spar_gmn[[i]], sparsity[[i]], xlab = 'sparisty (GMN)', ylab = 'sparsity (truth)')
+  plot(spar_gmss[[i]], sparsity[[i]], xlab = 'sparisty (GMSS)', ylab = 'sparsity (truth)')
+}
+dev.off()
+
+# sparsity_vec <- c(5e-3, 1e-2, 3e-2, 5e-2, 1e-1)
+# for (i in 0:4){
+#   pdf(paste0('n0t02_roc_curve',i+1,'pdf'), width = 5 ,height = 4)
+#   for(j in 0:3){
+#     count <- i * 4 + j + 1
+#     compute_roc(list_GMSS[[count]], list_true_GMSS[[count]], col = cbPalette[(count-1)%/% 4 + 1], 
+#                 lty = (count-1)%%4 + 1, add = ifelse((count-1)%%4 ==0, FALSE, TRUE), fpr_stop = 0.1)
+#     
+#   }
+#   legend("bottomright",            
+#          legend = c('50','100','200', '300'),
+#          lty = 1:4,
+#          cex = 0.5,
+#          col = rep(cbPalette[i+1],4), 
+#          title = 'SD')
+#   dev.off()
+#   
+# }
+# 
+# 
+# setwd('~/simulation_n_200_p_100_q_50_q0_0_zeta_-1.84_noise_0_codata_FALSE_hub_FALSE_corr_0/')
+# count <- 0
+# list_GMSS <- list_true_GMSS <- vector('list', 6)
+# for(prop in c(0.005, 0.01, 0.05)){
+#   for(stddev in c(50, 100)){
+#     count <- count + 1
+#     list_GMSS[[count]] <- list_true_GMSS[[count]] <- vector('list', 32)
+#     for(seed in 1:32){
+#       load(paste0('out_GMSS_VBEM_noanneal_select_AIC_seed_',seed, '_prior_zeta_prop',prop,'_stddev',stddev,'.rda'))
+#       bool_up <- upper.tri(net$A)
+#       list_GMSS[[count]][[seed]] <- out$m_delta[bool_up]
+#       list_true_GMSS[[count]][[seed]] <- net$A[bool_up]
+#     }
+#   }
+# }
+# 
+# pdf('n0t02_roc_curve.pdf', width = 5 ,height = 4)
+# par(pty = 's')
+# cbPalette <- c("#88CCEE", "#CC6677",  "#117733", "#332288", 
+#                         "#44AA99", "#999933")
+# for(count in 1:length(list_GMSS)){
+#   compute_roc(list_GMSS[[count]], list_true_GMSS[[count]], col = cbPalette[count], 
+#               lty = 1, add = ifelse(count==1, FALSE, TRUE), fpr_stop = 1)
+# }
+# legend("bottomright",            
+#        legend = c("0.5% (50)","0.5% (100)","1% (50)","1% (100)","5% (50)","5% (100)"),
+#        lty = 1,
+#        cex = 0.7,
+#        col = cbPalette, 
+#        title = 'sparisty (sd edges)')
+# 
+# dev.off()
+# 
+# 
+# # # setwd('~/simulation_n_200_p_100_q_3_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0/')
+# # setwd('~/simulation_n_200_p_100_q_50_q0_0_zeta_-1.84_noise_0_codata_FALSE_hub_FALSE_corr_0/')
+# # setwd('~/simulation_n_200_p_100_q_50_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0/')
+# # sparsity <- c()
+# # for (seed in 1:32) {
+# #   load(paste0('data_seed',seed,'.rda'))
+# #   bool_up <- upper.tri(net$A)
+# #   sparsity <- c(sparsity, sum(net$A[bool_up])/sum(bool_up))
+# # }
+# # quantile(sparsity)
+# # p = ncol(V)
+# # 0.03 * p * (p-1) /2 
+
+
+
+#
+dir <- '~/simulation_n_200_p_100_q_50_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0/'
+setwd(dir)
+df_model_criteria <- data.table()
+for (seed in 1:32) {
+  load(paste0('out_GMSS_VBEM_noanneal_select_AIC_seed_',seed,'_prior_zeta_prop0.01_stddev500.rda'))
+  bool_up <- upper.tri(out$out[[1]]$Omega)
+  Y <- scale(net$Y, center = TRUE, scale = FALSE) # center the data
+  S <- crossprod(Y)
+  N <- nrow(Y)
+  
+  aic <- sapply(out$out, function(x){
+    omega <- x$Omega
+    omega[x$m_delta <= 0.5] <- 0
+    diag(omega) <- diag(x$Omega)
+    sum(diag(S %*% omega)) - 
+      N * determinant(omega, logarithm = TRUE)$modulus[1] + 
+      2 * sum(x$m_delta > 0.5)
+  })
+  
+  bic <- sapply(out$out, function(x){
+    omega <- x$Omega
+    omega[x$m_delta <= 0.5] <- 0
+    diag(omega) <- diag(x$Omega)
+    sum(diag(S %*% omega)) - 
+      N * determinant(omega, logarithm = TRUE)$modulus[1] + 
+      log(N) * sum(x$m_delta > 0.5)
+  })
+  
+  ebic <- sapply(out$out, function(x){
+    omega <- x$Omega
+    omega[x$m_delta <= 0.5] <- 0
+    diag(omega) <- diag(x$Omega)
+    sum(diag(S %*% omega)) - 
+      N * determinant(omega, logarithm = TRUE)$modulus[1] + 
+      (log(N) + 4 * 0.5 * log(ncol(Y))) * sum(x$m_delta > 0.5)
+  })
+  
+  auc <- sapply(out$out, function(x){
+    auroc(x$m_delta[bool_up], net$A[bool_up])
+  })
+  
+  aucc <- sapply(out$out, function(x){
+    auroc(x$m_gamma, beta_true!=0)
+  })
+  
+  pauc <- sapply(out$out, function(x){
+    compute_pauc(x$m_delta[bool_up], net$A[bool_up],fpr_stop = 0.1, standardise = T)
+  })
+  
+  
+  paucc <- sapply(out$out, function(x){
+    compute_pauc(x$m_gamma, beta_true!=0,fpr_stop = 0.1, standardise = T)
+  })
+  
+  
+  tmp <- data.table(aic = aic, 
+                    bic = bic, 
+                    ebic = ebic,
+                    auc = auc,
+                    aucc = aucc,
+                    pauc = pauc, 
+                    paucc = paucc,
+                    v0 = out$list_hyper$v0_v,
+                    seed = seed)
+  
+  df_model_criteria <- rbind(df_model_criteria, tmp)
+}
+
+df_model_criteria <- melt(df_model_criteria, id.vars = c('v0', 'seed'))
+df_model_criteria_summary <- df_model_criteria[,list(M = mean(value),
+                                                     SD = sd(value),
+                                                     N = length(value)), by = c('v0', 'variable')]
+df_model_criteria_summary[,L:= M - 1.96 * SD/sqrt(N)]
+df_model_criteria_summary[,U:= M + 1.96 * SD/sqrt(N)]
+df_model_criteria_summary[, minM := min(M), by = 'variable']
+df_model_criteria_summary[, maxM := max(M), by = 'variable']
+df_model_criteria_summary[, type := 'general']
+df_model_criteria_summary[!grepl('auc',variable) & M == minM, type := 'best']
+df_model_criteria_summary[grepl('auc',variable) & M == maxM, type := 'best']
+g1 <- ggplot(df_model_criteria_summary[!grepl('auc',variable),], aes(x = round(v0,3), y = M, color = type)) + 
+  geom_point() +
+  geom_errorbar(aes(ymin=L, ymax=U), width = 0.01)+
+  theme_bw() +
+  facet_wrap(factor(variable,
+                    c('aic','bic','ebic'),
+                    c('AIC', 'BIC', 'EBIC'))~., scales = 'free')+
+  theme(legend.position = 'none') +
+  labs(x = '', y = '') +
+  scale_y_continuous(expand = c(0.01,0.01), trans='log10') +
+  scale_color_manual(values = c('black','grey')) 
+# ggsave('model_selection_criteria.pdf', width = 6, height = 2)
+
+g2 <- ggplot(df_model_criteria_summary[grepl('auc',variable),], aes(x = round(v0,3), y = M, color = type)) + 
+  geom_point() +
+  geom_errorbar(aes(ymin=L, ymax=U), width = 0.01)+
+  theme_bw() +
+  facet_wrap(factor(variable,
+                    c('auc','aucc','pauc','paucc'),
+                    c('AUC (edge)', 'AUC (auxiliary variable)', 'pAUC (edge)', 'pAUC (auxiliary variable)'))~., scales = 'free', nrow = 1)+
+  theme(legend.position = 'none') +
+  labs(x = 'spike standard deviations', y = '') +
+  scale_y_continuous(trans='log10',limits = c(0.5,1)) +
+  scale_color_manual(values = c('black','grey')) 
+# ggsave('model_selection_auc.pdf', width = 8, height = 2)
+
+
+library(patchwork)
+layout <- "
+AAA#
+BBBB
+"
+
+pdf('model_selection.pdf', width = 8, height = 4)
+g1 + g2 + plot_layout(design = layout)
+dev.off()
+
+######################################
+
+#         GM VBEM & EM
+
+######################################
+
+pt_vbem <- index_vbem <- it_vbem <- vb_it_vbem <- 
+  pt_em <- index_em <- it_em  <- list()
+dir <- '~/simulation_n_200_p_100_q_50_q0_0_zeta_-1.84_noise_0_codata_FALSE_hub_FALSE_corr_0/'
+for (dir in c('~/simulation_n_200_p_100_q_3_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0/',
+              '~/simulation_n_200_p_100_q_50_q0_0_zeta_-1.84_noise_0_codata_FALSE_hub_FALSE_corr_0/',
+              '~/simulation_n_200_p_100_q_50_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0/')){
+  setwd(dir)
+  pt[[dir]] <- index[[dir]] <- it[[dir]] <- vb_it[[dir]] <- list()
+  list_GM <- list_true_GM <- list_GM_EM <- list_true_GM_EM <- list()
+  a_rho <- b_rho <- rho_EM <- a_tau <- b_tau <- tau_EM <- c()
+  for(seed in 1:32){
+    load(paste0('out_GM_VBEM_beta_noanneal_select_AIC_seed_',seed,'.rda'))
+    list_GM[[seed]] <- out$m_delta[bool_up]
+    list_true_GM[[seed]] <- net$A[bool_up]
+    a_rho <- c(a_rho, out$a_rho)
+    b_rho <- c(b_rho, out$b_rho)
+    a_tau <- c(a_tau, out$a_tau)
+    b_tau <- c(b_tau, out$b_tau)
+    
+    tmp <- out$pt
+    units(tmp) <- 'secs'
+    pt_vbem[[dir]][[seed]] <- tmp
+    index_vbem[[dir]][[seed]] <- out$index
+    it_vbem[[dir]][[seed]] <- sapply(out$out, function(x)x$it)
+    vb_it_vbem[[dir]][[seed]] <- sapply(out$out, function(x)max(x$vec_vb_it))
+    
+    load(paste0('out_GM_EM_beta_noanneal_select_AIC_seed_',seed,'.rda'))
+    list_GM_EM[[seed]] <- out$P[bool_up]
+    list_true_GM_EM[[seed]] <- net$A[bool_up]
+    rho_EM <- c(rho_EM, out$rho)
+    tau_EM <- c(tau_EM, out$tau)
+    
+    tmp <- out$pt
+    units(tmp) <- 'secs'
+    pt_em[[dir]][[seed]] <- tmp
+    index_em[[dir]][[seed]] <- out$index
+    it_em[[dir]][[seed]] <- sapply(out$out, function(x)x$it)
+    
+  }
+  
+  
+  sapply(lapply(pt_vbem, unlist), quantile)
+  sapply(lapply(index_vbem, unlist), quantile)
+  sapply(lapply(index_vbem, unlist), function(x)sum(x==1))
+  sapply(lapply(index_vbem, unlist), function(x)sum(x==16)) # 1 (2)
+  sapply(lapply(it_vbem, unlist), quantile)
+  sapply(lapply(vb_it_vbem, unlist), quantile)
+  
+  
+  sapply(lapply(pt_em, unlist), quantile)
+  sapply(lapply(index_em, unlist), quantile)
+  sapply(lapply(index_em, unlist), function(x)sum(x==1))
+  sapply(lapply(index_em, unlist), function(x)sum(x==16))
+  sapply(lapply(it_em, unlist), quantile)
+  
+  
+  pdf('proc_gm_vbem_em_noanneal.pdf',width = 4, height = 4)
+  par(pty = 's')
+  compute_roc(list_GM, list_true_GM, add = F, fpr_stop = 0.1, col = 'red',main='pROC curves \n (edge selection)')
+  compute_roc(list_GM_EM, list_true_GM_EM, add = T, fpr_stop = 0.1, col = 'grey')
+  
+  legend("bottomright",     
+         legend = c("GM-VBEM","GM-EM"),
+         lty = 1,
+         cex = 0.7,
+         col = c('red','grey'))
+  
+  dev.off()  
+} 
+  rho_EM
+  a_rho/(a_rho + b_rho)
+
+  pdf('gm_vbem_em_rho.pdf',width = 4, height = 4)
+  par(pty='s')
+  x <- seq(0,1, length.out =101)
+  for(i in 1:length(rho_EM)){
+    if(i == 1){
+      plot(x, dbeta(x, a_rho[i], b_rho[i]), 'l')
+    }else{
+      lines(x, dbeta(x, a_rho[i], b_rho[i]))
+    }
+    abline(v = rho_EM[i], lty = 2)
+  }  
+  abline(v = pnorm(-1.84))
+dev.off()  
+
+
+pred_EM <- lapply(list_GM_EM, function(x)x>0.5)
+pred_VBEM <- lapply(list_GM, function(x)x>0.5)
+quantile(sapply(1:length(pred_EM), function(x)sum(list_true_GM[[x]] ==T & pred_EM[[x]] ==T )/ sum(list_true_GM[[x]] ==T)))
+quantile(sapply(1:length(pred_VBEM), function(x)sum(list_true_GM[[x]] ==T & pred_VBEM[[x]] ==T )/ sum(list_true_GM[[x]] ==T)))
+
+
+pdf('gm_vbem_em_tau.pdf',width = 4, height = 4)
+par(pty='s')
+x <- seq(0,1, length.out =101)
+for(i in 1:length(rho_EM)){
+  if(i == 1){
+    plot(x, dbeta(x, a_rho[i], b_rho[i]), 'l')
+  }else{
+    lines(x, dbeta(x, a_rho[i], b_rho[i]))
+  }
+  abline(v = rho_EM[i], lty = 2)
+}  
+dev.off()  
+
+
+setwd('~/simulation_n_200_p_100_q_50_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0/')
+load('data_seed1.rda')
+p <- nrow(V)
+n0 <- t02 <- ne <- c()
+for(proportion in c(0.005, 0.01,0.03)){
+  for(stddev in c(50,100,500)){
+    m <- round(p*(p-1)/2 * proportion)
+    est <- get_n0_t02(p*(p-1)/2, c(m, stddev^2))
+    ne <- c(ne, m)
+    n0 <- c(n0, est$n0)
+    t02 <- c(t02, est$t02)
+  }
+}
+
+ne
+round(n0,4)
+round(t02,4)
+setwd('~/simulation_n_200_p_100_q_50_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0/')
+pauc <- paucc <- pt <- index <- c()
+pauc_adapttol <- paucc_adapttol <- pt_adapttol  <- index_adapttol <- c()
+for (seed in 1:32) {
+  load(paste0('out_GMSS_VBEM_noanneal_select_AIC_seed_',seed,'_prior_zeta_prop0.01_stddev500.rda'))
+  pauc <- c(pauc, compute_pauc(out$m_delta[bool_up], net$A[bool_up],fpr_stop = 0.1, standardise = T))
+  paucc <- c(paucc, compute_pauc(out$m_gamma,  beta_true!=0,fpr_stop = 0.1, standardise = T))
+  tmp <- out$pt
+  units(tmp) <- 'mins'
+  pt <- c(pt, tmp)
+  index <- c(index, out$index)
+  load(paste0('out_GMSS_VBEM_noanneal_adapttol_select_AIC_seed_',seed,'_prior_zeta_prop0.01_stddev500.rda'))
+  pauc_adapttol <- c(pauc_adapttol, compute_pauc(out$m_delta[bool_up], net$A[bool_up],fpr_stop = 0.1, standardise = T))
+  paucc_adapttol <- c(paucc_adapttol, compute_pauc(out$m_gamma,  beta_true!=0,fpr_stop = 0.1, standardise = T))
+  tmp <- out$pt
+  units(tmp) <- 'mins'
+  pt_adapttol <- c(pt_adapttol, tmp)
+  index_adapttol <- c(index_adapttol, out$index)
+}
+
+quantile(pt)
+quantile(pt_adapttol)
+
+df <- rbind(
+  data.table(pauc = pauc,
+                 paucc = paucc,
+                 time = pt,
+                 tolerance = 'fixed 1e-3'),
+  data.table(pauc = pauc_adapttol,
+             paucc = paucc_adapttol,
+             time = pt_adapttol,
+             tolerance = 'adaptive')
+  
+)
+
+ggplot(df, aes(pauc, time, color = tolerance))+
+  geom_point()
+
+ggplot(df, aes(tolerance, time))+
+  geom_boxplot()
+
+setwd('~/simulation_n_200_p_100_q_50_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0/')
+
+df <- data.table()
+for (seed in 1:32) {
+  load(paste0('out_GMSS_VBEM_noanneal_select_AIC_seed_',seed,'_prior_zeta_prop0.01_stddev500.rda'))
+  tmp <- data.table (sapply(out$out, function(x){
+    tmp1 <- compute_pauc(x$m_delta[bool_up], net$A[bool_up],fpr_stop = 0.1, standardise = T)
+    tmp2 <- compute_pauc(x$m_gamma,  beta_true!=0,fpr_stop = 0.1, standardise = T)
+    tmp <- x$pt
+    units(tmp) <- 'mins'
+    return(c(tmp1, tmp2, tmp))
+  }))
+  tmp$type <- c('pauc','paucc','time')
+  tmp <- melt(tmp, id.vars = 'type')
+  tmp$tolerance <- 'fixed 1e-3'
+  df <- rbind(df, tmp)
+  load(paste0('out_GMSS_VBEM_noanneal_adapttol_select_AIC_seed_',seed,'_prior_zeta_prop0.01_stddev500.rda'))
+  tmp <- data.table (sapply(out$out, function(x){
+    tmp1 <- compute_pauc(x$m_delta[bool_up], net$A[bool_up],fpr_stop = 0.1, standardise = T)
+    tmp2 <- compute_pauc(x$m_gamma,  beta_true!=0,fpr_stop = 0.1, standardise = T)
+    tmp <- x$pt
+    units(tmp) <- 'mins'
+    return(c(tmp1, tmp2, tmp))
+  }))
+  tmp$type <- c('pauc','paucc','time')
+  tmp <- melt(tmp, id.vars = 'type')
+  tmp$tolerance <- 'adaptive'
+  df <- rbind(df, tmp)
+}
+tmp <- data.table(variable = paste0('V',1:16),
+                  variable2 = seq(1e-4, 1, length.out = 16))
+df <- merge(df, tmp, by='variable')
+ggplot(df, aes(factor(variable2), value, color=factor(tolerance, c('fixed 1e-3','adaptive')))) +
+  geom_boxplot(width = 0.5) +
+  theme_bw() + 
+  theme(legend.position = 'bottom')+
+  scale_color_manual(values = c('black','red')) +
+  labs(x='spike variance', y = 'values',color='tolerance') +
+  facet_grid(factor(type, c('pauc','paucc','time'),                
+                    c('pAUC (edge)','pAUC (auxiliary variable)','runtime (mins)'))~.)
+ggsave('adaptive_tol.pdf', width = 10, height = 6)
+
+# ggplot(df[type=='paucc'], aes(factor(variable2), value, color=tolerance)) +
+#   geom_boxplot() +
+#   theme_bw() + 
+#   theme(legend.position = 'bottom')+
+#   labs(x='spike variance', y = 'pAUC (auxiliary variable)')
+# ggsave('paucc_vs_v0.pdf', width = 6, height = 4)
+# 
+# ggplot(df[type=='time'], aes(factor(variable2), value, color=tolerance)) +
+#   geom_boxplot() +
+#   theme_bw() + 
+#   theme(legend.position = 'bottom')+
+#   labs(x='spike variance', y = 'runtime (mins)')
+# ggsave('time_vs_v0.pdf', width = 6, height = 4)
+
+
+###################################################
+
+#                beta & zeta
+
+###################################################
+
+for (dir in c('~/simulation_n_200_p_100_q_3_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0/',
+              '~/simulation_n_200_p_100_q_50_q0_0_zeta_-1.84_noise_0_codata_FALSE_hub_FALSE_corr_0/',
+              '~/simulation_n_200_p_100_q_50_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0/',
+              '~/simulation_n_200_p_100_q_100_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0/')){
+  # 
+  m1_beta_GMN <- m1_beta_GMSS <-  m1_zeta_GMN <- m1_zeta_GMSS <- list()
+  setwd(dir)
+  for(seed in 1:32){
+    load(paste0('data_seed',seed,'.rda'))
+    load(paste0('out_GMN_VBEM_noanneal_select_AIC_seed_',seed,'_prior_zeta_prop0.01_stddev500.rda'))
+    m1_beta_GMN[[seed]] <- out$mu_beta * out$m_gamma
+    m1_zeta_GMN[[seed]] <- out$mu_zeta
+    load(paste0('out_GMSS_VBEM_noanneal_select_AIC_seed_',seed,'_prior_zeta_prop0.01_stddev500.rda'))
+    m1_beta_GMSS[[seed]] <- out$mu_beta * out$m_gamma
+    m1_zeta_GMSS[[seed]] <- out$mu_zeta
+  }
+  m1_beta_GMN <- do.call('rbind', m1_beta_GMN)
+  m1_beta_GMSS <- do.call('rbind', m1_beta_GMSS)
+  m1_beta_GMN <- data.table( m1_beta_GMN )
+  m1_beta_GMSS <- data.table( m1_beta_GMSS )
+  m1_beta_GMN[,seed := seq_len(nrow(m1_beta_GMN))]
+  m1_beta_GMSS[,seed := seq_len(nrow(m1_beta_GMSS))] 
+  m1_beta_GMN <- melt(m1_beta_GMN, id.vars = 'seed')
+  m1_beta_GMSS <- melt(m1_beta_GMSS, id.vars = 'seed')
+  tmp <- data.table(variable = paste0('V',1:ncol(V)), active= beta_true!=0)
+  m1_beta_GMN <- merge(m1_beta_GMN, tmp, by = 'variable')
+  df <- merge(m1_beta_GMN, m1_beta_GMSS, by = c('variable','seed'))
+  
+  ggplot(df, aes(value.x, value.y, color = active)) + 
+    geom_point() +
+    scale_color_manual(values = c('black','red'))+
+    theme_bw() +
+    theme(legend.position = 'bottom') +
+    labs(x='GMN', y='GMSS') + 
+    geom_abline(aes(slope = 1, intercept = 0), lty = 2)
+  ggsave('beta_scatter_GMN_GMSS.pdf',width = 6, height = 4)
+  
+  dfs <- df[,list(Mx = mean(value.x),
+                  SDx = sd(value.x),
+                  Nx = length(value.x),
+                  My = mean(value.y),
+                  SDy = sd(value.y),
+                  Ny = length(value.y)),
+            by = c('variable','active')]
+  dfs[,Lx := Mx - 1.96 * SDx/sqrt(Nx)]
+  dfs[,Ux := Mx + 1.96 * SDx/sqrt(Nx)]
+  dfs[,Ly := My - 1.96 * SDy/sqrt(Ny)]
+  dfs[,Uy := My + 1.96 * SDy/sqrt(Ny)]
+  
+  ggplot(dfs, aes(Mx,My, color = active))+
+    geom_point() +
+    geom_errorbar(mapping = aes(ymin=Ly, ymax=Uy)) +
+    geom_errorbarh(mapping = aes(xmin=Lx,xmax=Ux)) +
+    scale_color_manual(values = c('black','red'))+
+    theme_bw() +
+    theme(legend.position = 'bottom') +
+    labs(x='GMN', y='GMSS') + 
+    geom_abline(aes(slope = 1, intercept = 0), lty = 2)
+  
+  ggsave('beta_ci_GMN_GMSS.pdf',width = 6, height = 4)
+  
+  
+  
+  m1_zeta_GMN <- do.call('c', m1_zeta_GMN)
+  m1_zeta_GMSS <- do.call('c', m1_zeta_GMSS)
+  df <- data.table(vx = m1_zeta_GMN, 
+                   vy = m1_zeta_GMSS,
+                   variable = 1:length(m1_zeta_GMN))
+  ggplot(df,aes(vx, vy)) +
+    geom_point() +
+    geom_abline(aes(slope=1,intercept = 0),lty = 2) +
+    theme_bw() +
+    labs(x='GMN', y='GMSS')
+  # +
+  #   geom_smooth(method = 'lm')
+  ggsave('zeta_GMN_GMSS.pdf',width = 6, height = 4)
+  
+}
+
+
+setwd('~/simulation_n_200_p_100_q_50_q0_3_zeta_-1.5_noise_0.2_codata_TRUE_hub_TRUE_noise_0.2_corr_0')
+ne02 <- ne03 <- c()
+for (seed in 1:32) {
+  load(paste0('data_seed',seed,'.rda'))
+  bool_up <- upper.tri(net$A)
+  ne02 <- c(ne02, sum(net$A[bool_up]))
+}
+
+setwd('~/simulation_n_200_p_100_q_50_q0_3_zeta_-1.5_noise_0.3_codata_TRUE_hub_TRUE_noise_0.3_corr_0')
+for (seed in 1:32) {
+  load(paste0('data_seed',seed,'.rda'))
+  bool_up <- upper.tri(net$A)
+  ne03 <- c(ne03, sum(net$A[bool_up]))
+}
+
+mean(ne03) - mean(ne02)
+
+
+# Q
+dir <- '~/simulation_n_200_p_100_q_20_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0/'
+dir <- '~/simulation_n_200_p_100_q_100_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0'
+
+dir <- '~/simulation_n_200_p_100_q_50_q0_1_zeta_-0.7_noise_0.1_codata_TRUE_hub_TRUE_corr_0/'
+dir <- '~/simulation_n_200_p_100_q_50_q0_5_zeta_-2.1_noise_0.1_codata_TRUE_hub_TRUE_corr_0/'
+
+dir <- '~/simulation_n_200_p_100_q_50_q0_3_zeta_-0.45_noise_0.1_codata_TRUE_hub_TRUE_beta0_0.15_corr_0'
+dir <- '~/simulation_n_200_p_100_q_50_q0_3_zeta_-2.5_noise_0.1_codata_TRUE_hub_TRUE_beta0_0.85_corr_0'
+
+dir <-'~/simulation_n_200_p_100_q_50_q0_3_zeta_-1.5_noise_0.2_codata_TRUE_hub_TRUE_noise_0.2_corr_0'
+dir <-'~/simulation_n_200_p_100_q_50_q0_3_zeta_-1.5_noise_0.3_codata_TRUE_hub_TRUE_noise_0.3_corr_0'
+
+dir = '~/simulation_n_200_p_100_q_50_q0_3_zeta_-1.75_noise_0.1_codata_TRUE_hub_TRUE_corr_0'
+dir = '~/simulation_n_200_p_100_q_50_q0_3_zeta_-1.25_noise_0.1_codata_TRUE_hub_TRUE_corr_0'
+
+list_GMSS <- list_true_GMSS <- list_GMSS_c <- list_true_GMSS_c <- list()
+setwd(dir)
+for(seed in 1:32){
+  load(paste0('data_seed',seed,'.rda'))
+  load(paste0('out_GMSS_VBEM_noanneal_select_AIC_seed_',seed,'_prior_zeta_prop0.01_stddev500.rda'))
+  bool_up <- upper.tri(out$m_delta) 
+  list_GMSS[[seed]] <- out$m_delta[bool_up]
+  list_true_GMSS[[seed]] <- net$A[bool_up]
+  list_GMSS_c[[seed]] <- out$m_gamma
+  list_true_GMSS_c[[seed]] <- beta_true!=0
+  
+}
+ns <- sapply(1:32, function(x)sum(list_GMSS_c[[x]]>=0.5))
+quantile(ns)
+tpr <- sapply(1:32, function(x)sum(list_GMSS[[x]]>=0.5 & list_true_GMSS[[x]]==1)/sum(list_true_GMSS[[x]]==1))
+fpr <- sapply(1:32, function(x)sum(list_GMSS[[x]]>=0.5 & list_true_GMSS[[x]]==0)/sum(list_true_GMSS[[x]]==0))
+quantile(tpr)
+quantile(fpr)
+compute_roc(list_GMSS, list_true_GMSS, fpr_stop = 0.1, col = 'black',add = F)
+compute_roc(list_GMSS, list_true_GMSS, fpr_stop = 0.1, col = 'red',add = T)
+
+
+tpr <- sapply(1:32, function(x)sum(list_GMSS_c[[x]]>=0.5 & list_true_GMSS_c[[x]]==1)/sum(list_true_GMSS_c[[x]]==1))
+fpr <- sapply(1:32, function(x)sum(list_GMSS_c[[x]]>=0.5 & list_true_GMSS_c[[x]]==0)/sum(list_true_GMSS_c[[x]]==0))
+quantile(tpr)
+quantile(fpr)
+compute_roc(list_GMSS_c, list_true_GMSS_c, fpr_stop = 0.1, col = 'black',add = F)
+compute_roc(list_GMSS_c, list_true_GMSS_c, fpr_stop = 0.1, col = 'red',add = T)
+
+compute_roc(list_GMSS_c, list_true_GMSS_c, fpr_stop = 1, col = 'black',add = F)
+compute_roc(list_GMSS_c, list_true_GMSS_c, fpr_stop = 1, col = 'red',add = T)
+
+list_GMSS
+
+
+compute_pauc(list_GMSS, list_true_GMSS, fpr_stop = 0.1, standardise = T)
+
+dir <- '~/simulation_n_200_p_100_q_50_q0_3_zeta_-0.45_noise_0.1_codata_TRUE_hub_TRUE_beta0_0.15_corr_0'
+dir <- '~/simulation_n_200_p_100_q_50_q0_3_zeta_-2.5_noise_0.1_codata_TRUE_hub_TRUE_beta0_0.85_corr_0'
+
+dir = '~/simulation_n_200_p_100_q_50_q0_3_zeta_-1.75_noise_0.1_codata_TRUE_hub_TRUE_corr_0'
+dir = '~/simulation_n_200_p_100_q_50_q0_3_zeta_-1.25_noise_0.1_codata_TRUE_hub_TRUE_corr_0'
+setwd(dir)
+zeta <- c()
+beta <- matrix(nrow=0, ncol= 50)
+for(seed in 1:32){
+  load(paste0('data_seed',seed,'.rda'))
+  load(paste0('out_GMSS_VBEM_noanneal_select_AIC_seed_',seed,'_prior_zeta_prop0.01_stddev500.rda'))
+  zeta <- c(zeta, out$mu_zeta)
+  beta <- rbind(beta, out$mu_beta)
+}
+id  <- which(beta_true!=0)
+quantile(zeta)
+apply(beta[,id],2,quantile)
+
+vec_dir <- c(
+  '~/simulation_n_200_p_100_q_50_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0',
+  '~/simulation_n_200_p_50_q_50_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0/',
+  '~/simulation_n_100_p_100_q_50_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0/',
+  '~/simulation_n_100_p_50_q_50_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0/',
+  
+  '~/simulation_n_200_p_100_q_20_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0/',
+  '~/simulation_n_200_p_100_q_100_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0',
+  
+  '~/simulation_n_200_p_100_q_50_q0_3_zeta_-0.45_noise_0.1_codata_TRUE_hub_TRUE_beta0_0.15_corr_0',
+  '~/simulation_n_200_p_100_q_50_q0_3_zeta_-2.5_noise_0.1_codata_TRUE_hub_TRUE_beta0_0.85_corr_0',
+  
+  '~/simulation_n_200_p_100_q_50_q0_3_zeta_-1.5_noise_0.2_codata_TRUE_hub_TRUE_noise_0.2_corr_0',
+  '~/simulation_n_200_p_100_q_50_q0_3_zeta_-1.5_noise_0.3_codata_TRUE_hub_TRUE_noise_0.3_corr_0',
+  
+  '~/simulation_n_200_p_100_q_50_q0_3_zeta_-1.75_noise_0.1_codata_TRUE_hub_TRUE_corr_0',
+  '~/simulation_n_200_p_100_q_50_q0_3_zeta_-1.25_noise_0.1_codata_TRUE_hub_TRUE_corr_0',
+  
+  '~/simulation_n_200_p_100_q_50_q0_1_zeta_-0.7_noise_0.1_codata_TRUE_hub_TRUE_corr_0/',
+  '~/simulation_n_200_p_100_q_50_q0_5_zeta_-2.1_noise_0.1_codata_TRUE_hub_TRUE_corr_0/'
+  
+  # '~/simulation_n_200_p_100_q_50_q0_0_zeta_-1.84_noise_0_codata_FALSE_hub_FALSE_corr_0',
+  # '~/simulation_n_200_p_100_q_3_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0'
+)
+# auc <- aucc <- 
+  pauc_gmss <- paucc_gmss <-  pauc_n  <-  pauc_gm <- list()
+  pt_gm <- index_gm <- it_gm <- vb_it_gm <- 
+    pt_gmn <- index_gmn <- it_gmn <- vb_it_gmn  <- 
+    pt_gmss <- index_gmss <- it_gmss <- vb_it_gmss  <- list()
+for (dir in 
+vec_dir){
+  
+  setwd(dir)
+  list_GMSS <- list_true_GMSS <-  list_GM <- list_true_GM  <-
+  list_GMN <- list_true_GMN  <- list_GMSS_c <- list_true_GMSS_c <- list()
+  pt_gm[[dir]] <- index_gm[[dir]]<- it_gm[[dir]] <- vb_it_gm[[dir]]<- 
+    pt_gmn[[dir]] <- index_gmn[[dir]]<- it_gmn[[dir]] <- vb_it_gmn[[dir]] <- 
+    pt_gmss[[dir]] <- index_gmss[[dir]]<- it_gmss[[dir]] <- vb_it_gmss[[dir]] <- list()
+  
+  for(seed in 1:32){
+    load(paste0('data_seed',seed,'.rda'))
+    load(paste0('out_GMSS_VBEM_noanneal_select_AIC_seed_',seed,'_prior_zeta_prop0.01_stddev500.rda'))
+    bool_up <- upper.tri(out$m_delta) 
+    list_GMSS[[seed]] <- out$m_delta[bool_up]
+    list_true_GMSS[[seed]] <- net$A[bool_up]
+    list_GMSS_c[[seed]] <- out$m_gamma
+    list_true_GMSS_c[[seed]] <- beta_true!=0
+    
+    tmp <- out$pt
+    units(tmp) <- 'secs'
+    pt_gmss[[dir]][[seed]] <- tmp
+    index_gmss[[dir]][[seed]] <- out$index
+    it_gmss[[dir]][[seed]] <- sapply(out$out, function(x)x$it)
+    vb_it_gmss[[dir]][[seed]] <- sapply(out$out, function(x)max(x$vec_vb_it))
+    
+    
+    load(paste0('out_GMN_VBEM_noanneal_select_AIC_seed_',seed,'_prior_zeta_prop0.01_stddev500.rda'))
+    list_GMN[[seed]] <- out$m_delta[bool_up]
+    list_true_GMN[[seed]] <- net$A[bool_up]
+    
+    tmp <- out$pt
+    units(tmp) <- 'secs'
+    pt_gmn[[dir]][[seed]] <- tmp
+    index_gmn[[dir]][[seed]] <- out$index
+    it_gmn[[dir]][[seed]] <- sapply(out$out, function(x)x$it)
+    vb_it_gmn[[dir]][[seed]] <- sapply(out$out, function(x)max(x$vec_vb_it))
+    
+    
+    load(paste0('out_GM_VBEM_noanneal_select_AIC_seed_',seed,'_prior_zeta_prop0.01_stddev500.rda'))
+    list_GM[[seed]] <- out$m_delta[bool_up]
+    list_true_GM[[seed]] <- net$A[bool_up]
+    
+    tmp <- out$pt
+    units(tmp) <- 'secs'
+    pt_gm[[dir]][[seed]] <- tmp
+    index_gm[[dir]][[seed]] <- out$index
+    it_gm[[dir]][[seed]] <- sapply(out$out, function(x)x$it)
+    vb_it_gm[[dir]][[seed]] <- sapply(out$out, function(x)max(x$vec_vb_it))
+    
+  }
+  # auc[[dir]] <-  compute_pauc(list_GMSS,list_true_GMSS,  fpr_stop = 1, standardise = F) 
+  pauc_gmss[[dir]] <- compute_pauc(list_GMSS,list_true_GMSS,  fpr_stop = 0.1, standardise = T) 
+  # aucc[[dir]] <- compute_pauc(list_GMSS_c,list_true_GMSS_c,  fpr_stop = 1, standardise = F) 
+  paucc_gmss[[dir]] <- compute_pauc(list_GMSS_c,list_true_GMSS_c,  fpr_stop = 0.1, standardise =T) 
+  
+  pauc_n[[dir]] <- compute_pauc(list_GMN,list_true_GMN,  fpr_stop = 0.1, standardise = T) 
+  pauc_gm[[dir]] <- compute_pauc(list_GM,list_true_GM,  fpr_stop = 0.1, standardise = T) 
+}
+
+  
+  sapply(lapply(pt_gm, unlist), quantile)
+  sapply(lapply(index_gm, unlist), quantile)
+  sapply(lapply(index_gm, unlist), function(x)sum(x==1))
+  sapply(lapply(index_gm, unlist), function(x)sum(x==16)) 
+  sapply(lapply(it_gm, unlist), quantile)
+  sapply(lapply(vb_it_gm, unlist), quantile)
+  
+# auc <- do.call('rbind',  auc)
+# auc <- apply(auc, 1, function(x){c(mean(x), sd(x), length(x))})
+# aucc <- do.call('rbind',  aucc)
+# aucc <- apply(aucc, 1, function(x){c(mean(x), sd(x), length(x))})
+pauc_gmss <- do.call('rbind',  pauc_gmss)
+pauc_gmss <- apply(pauc_gmss, 1, function(x){c(mean(x), sd(x), length(x))})
+paucc_gmss <- do.call('rbind',  paucc_gmss)
+paucc_gmss <- apply(paucc_gmss, 1, function(x){c(mean(x), sd(x), length(x))})
+pauc_n <- do.call('rbind',  pauc_n)
+pauc_n <- apply(pauc_n, 1, function(x){c(mean(x), sd(x), length(x))})
+pauc_gm <- do.call('rbind',  pauc_gm)
+pauc_gm <- apply(pauc_gm, 1, function(x){c(mean(x), sd(x), length(x))})
+
+
+# df <- data.table(rbind(t(auc),t(aucc),t(pauc), t(paucc)), keep.rownames = T)
+# df$variable <- rep(c('auc','aucc','pauc','paucc'), each = length(unique(df$rn)))
+df <- data.table(rbind(t(pauc_gm),t(pauc_n),t(pauc_gmss), t(paucc_gmss)), keep.rownames = T)
+df$variable <- rep(c('pauc_gm','pauc_n','pauc_gmss','paucc_gmss'), each = length(unique(df$rn)))
+setnames(df, c(paste0('V',1:3)), c('M','SD','N'))
+df[,label:=paste0(round(M,2), ' (', round(SD/sqrt(N), 2)  ,') ')]
+# df[,L:=M-1.96 * SD/sqrt(N)]
+# df[,U:=M+1.96 * SD/sqrt(N)]
+# df[,label:=paste0(round(M,2), '[', round(L,2), ' - ', round(U,2) ,']')]
+tmp <- dcast(df, rn~variable, value.var = 'label')
+tmp[,rn := factor(rn, vec_dir)]
+
+setkey(tmp, rn)
+xtable::xtable(tmp[,c('rn','pauc_gm','pauc_n','pauc_gmss','paucc_gmss')])
+
+zeta <- o <- beta <- list()
+dirs <- c('~/simulation_n_200_p_100_q_50_q0_3_zeta_-1.75_noise_0.1_codata_TRUE_hub_TRUE_corr_0',
+  '~/simulation_n_200_p_100_q_50_q0_3_zeta_-1.25_noise_0.1_codata_TRUE_hub_TRUE_corr_0',
+  '~/simulation_n_200_p_100_q_50_q0_1_zeta_-0.7_noise_0.1_codata_TRUE_hub_TRUE_corr_0/',
+  '~/simulation_n_200_p_100_q_50_q0_5_zeta_-2.1_noise_0.1_codata_TRUE_hub_TRUE_corr_0/')
+
+for (dir in dirs) {
+  setwd(dir)
+  zeta[[dir]] <- o[[dir]] <- c()
+  beta[[dir]] <- matrix(nrow = 0, ncol = 50)
+  for(seed in 1:32){
+    load(paste0('data_seed',seed,'.rda'))
+    load(paste0('out_GMSS_VBEM_noanneal_select_AIC_seed_',seed,'_prior_zeta_prop0.01_stddev500.rda'))
+    zeta[[dir]] <- c(zeta[[dir]], out$mu_zeta)
+    o[[dir]] <- c(o[[dir]], out$a_o/out$b_o)
+    beta[[dir]] <- rbind(beta[[dir]], out$mu_beta)
+  }
+  print(which(beta_true!=0))
+}
+
+lapply(zeta,quantile)
+lapply(o,quantile)
+tmp <- lapply(beta, function(x)apply(x,2,quantile))
+tmp[[1]][,c(2,4,17)]
+tmp[[2]][,c(2,4,17)]
+plot(tmp[[1]][3,])
+plot(tmp[[2]][3,])
+tmp[[3]][,c(17)]
+tmp[[4]][,c(2, 4, 7, 12, 17)]
+
+
+qnorm(0.01)
+qnorm(0.03)
+qnorm(0.085)
+1/50
+3/50
+5/50
+
+for(dir in vec_dir){
+  setwd(dir)
+  list_GM <- list_GMN <- list_GMSS <- list_GMSS_c  <- list_GMSS_adapttol <- list_GMSS_c_adapttol <- vector('list',32)
+  list_true_GM <- list_true_GMN <- list_true_GMSS <- list_true_GMSS_c <-list_true_GMSS_adapttol <- list_true_GMSS_c_adapttol  <- vector('list',32)
+  for(seed in 1:32){
+    load(paste0('out_GM_VBEM_noanneal_select_AIC_seed_',seed,'_prior_zeta_prop0.01_stddev500.rda'))
+    bool_up <- upper.tri(net$A)
+    list_GM[[seed]] <- out$m_delta[bool_up]
+    list_true_GM[[seed]] <- net$A[bool_up]
+    load(paste0('out_GMN_VBEM_noanneal_select_AIC_seed_',seed,'_prior_zeta_prop0.01_stddev500.rda'))
+    list_GMN[[seed]] <- out$m_delta[bool_up]
+    list_true_GMN[[seed]] <- net$A[bool_up]
+    load(paste0('out_GMSS_VBEM_noanneal_select_AIC_seed_',seed,'_prior_zeta_prop0.01_stddev500.rda'))
+    list_GMSS[[seed]] <- out$m_delta[bool_up]
+    list_true_GMSS[[seed]] <- net$A[bool_up]
+    list_GMSS_c[[seed]] <- out$m_gamma
+    list_true_GMSS_c[[seed]] <- beta_true!=0
+    load(paste0('out_GMSS_VBEM_noanneal_adapttol_select_AIC_seed_',seed,'_prior_zeta_prop0.01_stddev500.rda'))
+    list_GMSS_adapttol[[seed]] <- out$m_delta[bool_up]
+    list_true_GMSS_adapttol[[seed]] <- net$A[bool_up]
+    list_GMSS_c_adapttol[[seed]] <- out$m_gamma
+    list_true_GMSS_c_adapttol[[seed]] <- beta_true!=0
+  }
+  
+
+  pdf('proc_gm_gmn_gmss_noanneal.pdf',width = 5, height = 4)
+  par(pty = 's')
+  compute_roc(list_GM, list_true_GM, add = F, fpr_stop = 0.1, col = 'black', main = 'pROC curves \n (edges)')
+  compute_roc(list_GMN, list_true_GMN, add = T, fpr_stop = 0.1, col = 'orange')
+  compute_roc(list_GMSS, list_true_GMSS, add = T, fpr_stop = 0.1, col = 'red')
+
+
+    legend("bottomright",     
+           legend = c("GM-VBEM*","GMN-VBEM","GMSS-VBEM"),
+           lty = 1,
+           cex = 0.7,
+           col = c('black','orange','red'))
+
+  dev.off()
+}
+
+runtime_gm <- runtime_gmn  <- runtime_gmss <-  runtime_gmss_adapttol <- list() 
+index_gm <- it_gm <- vb_it_gm <-
+  index_gmn <- it_gmn <- vb_it_gmn <-
+  index_gmss <- it_gmss <- vb_it_gmss <- list()
+vec_dir <- c(
+  '~/simulation_n_20_p_100_q_50_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0',
+  '~/simulation_n_50_p_100_q_50_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0',
+  '~/simulation_n_100_p_100_q_50_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0',
+  '~/simulation_n_150_p_100_q_50_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0',
+  '~/simulation_n_200_p_100_q_50_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0',
+  '~/simulation_n_250_p_100_q_50_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0',
+  '~/simulation_n_300_p_100_q_50_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0')
+  
+for(dir in vec_dir){
+  setwd(dir)
+  index_gm[[dir]]<- it_gm[[dir]] <- vb_it_gm[[dir]]<- 
+    index_gmn[[dir]]<- it_gmn[[dir]] <- vb_it_gmn[[dir]]<- 
+    index_gmss[[dir]]<- it_gmss[[dir]] <- vb_it_gmss[[dir]]<- list()
+  
+  runtime_gm[[dir]] <- runtime_gmn[[dir]]  <- runtime_gmss[[dir]] <-  runtime_gmss_adapttol[[dir]] <- c()
+  for(seed in 1:32){
+    load(paste0('out_GM_VBEM_noanneal_select_AIC_seed_',seed,'_prior_zeta_prop0.01_stddev500.rda'))
+    tmp <- out$pt
+    units(tmp) <- 'secs'
+    runtime_gm[[dir]] <- c(runtime_gm[[dir]], tmp)
+    
+    index_gm[[dir]][[seed]] <- out$index
+    it_gm[[dir]][[seed]] <- sapply(out$out, function(x)x$it)
+    vb_it_gm[[dir]][[seed]] <- sapply(out$out, function(x)max(x$vec_vb_it))
+    
+    load(paste0('out_GMN_VBEM_noanneal_select_AIC_seed_',seed,'_prior_zeta_prop0.01_stddev500.rda'))
+    tmp <- out$pt
+    units(tmp) <- 'secs'
+    runtime_gmn[[dir]] <- c(runtime_gmn[[dir]], tmp)
+    
+    
+    index_gmn[[dir]][[seed]] <- out$index
+    it_gmn[[dir]][[seed]] <- sapply(out$out, function(x)x$it)
+    vb_it_gmn[[dir]][[seed]] <- sapply(out$out, function(x)max(x$vec_vb_it))
+    
+    
+    load(paste0('out_GMSS_VBEM_noanneal_select_AIC_seed_',seed,'_prior_zeta_prop0.01_stddev500.rda'))
+    tmp <- out$pt
+    units(tmp) <- 'secs'
+    runtime_gmss[[dir]] <- c(runtime_gmss[[dir]], tmp)
+    
+    index_gmss[[dir]][[seed]] <- out$index
+    it_gmss[[dir]][[seed]] <- sapply(out$out, function(x)x$it)
+    vb_it_gmss[[dir]][[seed]] <- sapply(out$out, function(x)max(x$vec_vb_it))
+    
+    
+    load(paste0('out_GMSS_VBEM_noanneal_adapttol_select_AIC_seed_',seed,'_prior_zeta_prop0.01_stddev500.rda'))
+    tmp <- out$pt
+    units(tmp) <- 'secs'
+    runtime_gmss_adapttol[[dir]] <- c(runtime_gmss_adapttol[[dir]], tmp)
+    }
+}
+  
+
+sapply(lapply(index_gm, unlist), quantile)
+sapply(lapply(index_gm, unlist), function(x)sum(x==1))
+sapply(lapply(index_gm, unlist), function(x)sum(x==16))
+sapply(lapply(it_gm, unlist), quantile)
+sapply(lapply(vb_it_gm, unlist), quantile)
+
+sapply(lapply(index_gmn, unlist), quantile)
+sapply(lapply(index_gmn, unlist), function(x)sum(x==1))
+sapply(lapply(index_gmn, unlist), function(x)sum(x==16))
+sapply(lapply(it_gmn, unlist), quantile)
+sapply(lapply(vb_it_gmn, unlist), quantile)
+
+sapply(lapply(index_gmss, unlist), quantile)
+sapply(lapply(index_gmss, unlist), function(x)sum(x==1))
+sapply(lapply(index_gmss, unlist), function(x)sum(x==16)) 
+sapply(lapply(it_gmss, unlist), quantile)
+sapply(lapply(vb_it_gmss, unlist), quantile)
+
+
+
+
+runtime_gm <- do.call('rbind', runtime_gm)
+runtime_gm <- apply(runtime_gm, 1, function(x){c(mean(x), sd(x), length(x))})
+runtime_gmn <- do.call('rbind', runtime_gmn)
+runtime_gmn <- apply(runtime_gmn, 1, function(x){c(mean(x), sd(x), length(x))})
+runtime_gmss <- do.call('rbind', runtime_gmss)
+runtime_gmss <- apply(runtime_gmss, 1, function(x){c(mean(x), sd(x), length(x))})
+runtime_gmss_adapttol <- do.call('rbind', runtime_gmss_adapttol)
+runtime_gmss_adapttol <- apply(runtime_gmss_adapttol, 1, function(x){c(mean(x), sd(x), length(x))})
+
+df <- data.table(rbind(t(runtime_gm),t(runtime_gmn),t(runtime_gmss),t(runtime_gmss_adapttol)), keep.rownames = T)
+df$variable <- rep(c('GM','GMN','GMSS','GMSS (adaptive)'), each = length(unique(df$rn)))
+setnames(df, c(paste0('V',1:3)), c('M','SD','N'))
+df[,L:=M-1.96 * SD/sqrt(N)]
+df[,U:=M+1.96 * SD/sqrt(N)]
+df[,N := as.numeric(str_extract(rn, "(?<=n_)\\d+"))]
+
+ggplot(df, aes(x=N, y=M, group=variable, color = variable)) +
+  geom_point() +
+  geom_line() +
+  # scale_color_manual(values = c('black','orange','red'))+
+  geom_errorbar(mapping = aes(ymin = L, ymax=U), width =0.2) +
+  theme_bw() +
+  theme(legend.position = 'bottom') +
+  scale_y_continuous(trans='log10')+
+  labs(x= 'sample size (N)', y='runtime (seconds)',color ='')  +
+  scale_color_jama()
+ggsave('runtime_vs_n.pdf',width = 6, height = 4.5)
+
+ggplot(df[variable!='GMSS (adaptive)',], aes(x=N, y=M, group=variable, color = variable)) +
+  geom_point() +
+  geom_line() +
+  scale_color_manual(values = c('black','orange','red'))+
+  geom_errorbar(mapping = aes(ymin = L, ymax=U), width =0.2) +
+  theme_bw() +
+  theme(legend.position = 'bottom') +
+  scale_y_continuous(trans='log10')+
+  labs(x= 'sample size (N)', y='runtime (seconds)',color ='') 
+ggsave('runtime_vs_n_gm_gmn_gmss.pdf',width = 6, height = 4.5)
+
+
+runtime_gm <- runtime_gmn  <- runtime_gmss <-  runtime_gmss_adapttol <- 
+  index_gm <- it_gm <- vb_it_gm <-
+  index_gmn <- it_gmn <- vb_it_gmn <-
+  index_gmss <- it_gmss <- vb_it_gmss <- list() 
+vec_dir <- c(
+  '~/simulation_n_200_p_50_q_50_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0',
+  '~/simulation_n_200_p_100_q_50_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0',
+  '~/simulation_n_200_p_150_q_50_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0',
+  '~/simulation_n_200_p_200_q_50_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0',
+  '~/simulation_n_200_p_250_q_50_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0'
+  # ,
+  # '~/simulation_n_200_p_300_q_50_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0'
+)
+
+for(dir in vec_dir){
+  setwd(dir)
+  runtime_gm[[dir]] <- runtime_gmn[[dir]]  <- runtime_gmss[[dir]] <-  runtime_gmss_adapttol[[dir]] <- c()
+  
+  index_gm[[dir]]<- it_gm[[dir]] <- vb_it_gm[[dir]]<- 
+    index_gmn[[dir]]<- it_gmn[[dir]] <- vb_it_gmn[[dir]]<- 
+    index_gmss[[dir]]<- it_gmss[[dir]] <- vb_it_gmss[[dir]]<- list()
+  for(seed in 1:32){
+    load(paste0('out_GM_VBEM_noanneal_select_AIC_seed_',seed,'_prior_zeta_prop0.01_stddev500.rda'))
+    tmp <- out$pt
+    units(tmp) <- 'secs'
+    runtime_gm[[dir]] <- c(runtime_gm[[dir]], tmp)
+    
+    index_gm[[dir]][[seed]] <- out$index
+    it_gm[[dir]][[seed]] <- sapply(out$out, function(x)x$it)
+    vb_it_gm[[dir]][[seed]] <- sapply(out$out, function(x)max(x$vec_vb_it))
+    
+    load(paste0('out_GMN_VBEM_noanneal_select_AIC_seed_',seed,'_prior_zeta_prop0.01_stddev500.rda'))
+    tmp <- out$pt
+    units(tmp) <- 'secs'
+    runtime_gmn[[dir]] <- c(runtime_gmn[[dir]], tmp)
+    
+    index_gmn[[dir]][[seed]] <- out$index
+    it_gmn[[dir]][[seed]] <- sapply(out$out, function(x)x$it)
+    vb_it_gmn[[dir]][[seed]] <- sapply(out$out, function(x)max(x$vec_vb_it))
+    
+    load(paste0('out_GMSS_VBEM_noanneal_select_AIC_seed_',seed,'_prior_zeta_prop0.01_stddev500.rda'))
+    tmp <- out$pt
+    units(tmp) <- 'secs'
+    runtime_gmss[[dir]] <- c(runtime_gmss[[dir]], tmp)
+    
+    index_gmss[[dir]][[seed]] <- out$index
+    it_gmss[[dir]][[seed]] <- sapply(out$out, function(x)x$it)
+    vb_it_gmss[[dir]][[seed]] <- sapply(out$out, function(x)max(x$vec_vb_it))
+    
+    load(paste0('out_GMSS_VBEM_noanneal_adapttol_select_AIC_seed_',seed,'_prior_zeta_prop0.01_stddev500.rda'))
+    tmp <- out$pt
+    units(tmp) <- 'secs'
+    runtime_gmss_adapttol[[dir]] <- c(runtime_gmss_adapttol[[dir]], tmp)
+  }
+}
+
+sapply(lapply(index_gm, unlist), quantile)
+sapply(lapply(index_gm, unlist), function(x)sum(x==1))
+sapply(lapply(index_gm, unlist), function(x)sum(x==16))
+sapply(lapply(it_gm, unlist), quantile)
+sapply(lapply(vb_it_gm, unlist), quantile)
+
+sapply(lapply(index_gmn, unlist), quantile)
+sapply(lapply(index_gmn, unlist), function(x)sum(x==1))
+sapply(lapply(index_gmn, unlist), function(x)sum(x==16))
+sapply(lapply(it_gmn, unlist), quantile)
+sapply(lapply(vb_it_gmn, unlist), quantile)
+
+sapply(lapply(index_gmss, unlist), quantile)
+sapply(lapply(index_gmss, unlist), function(x)sum(x==1))
+sapply(lapply(index_gmss, unlist), function(x)sum(x==16)) 
+sapply(lapply(it_gmss, unlist), quantile)
+sapply(lapply(vb_it_gmss, unlist), quantile)
+
+
+runtime_gm <- do.call('rbind', runtime_gm)
+runtime_gm <- apply(runtime_gm, 1, function(x){c(mean(x), sd(x), length(x))})
+runtime_gmn <- do.call('rbind', runtime_gmn)
+runtime_gmn <- apply(runtime_gmn, 1, function(x){c(mean(x), sd(x), length(x))})
+runtime_gmss <- do.call('rbind', runtime_gmss)
+runtime_gmss <- apply(runtime_gmss, 1, function(x){c(mean(x), sd(x), length(x))})
+runtime_gmss_adapttol <- do.call('rbind', runtime_gmss_adapttol)
+runtime_gmss_adapttol <- apply(runtime_gmss_adapttol, 1, function(x){c(mean(x), sd(x), length(x))})
+
+df <- data.table(rbind(t(runtime_gm),t(runtime_gmn),t(runtime_gmss),t(runtime_gmss_adapttol)), keep.rownames = T)
+df$variable <- rep(c('GM','GMN','GMSS','GMSS (adaptive)'), each = length(unique(df$rn)))
+setnames(df, c(paste0('V',1:3)), c('M','SD','N'))
+df[,L:=M-1.96 * SD/sqrt(N)]
+df[,U:=M+1.96 * SD/sqrt(N)]
+df[,P := as.numeric(str_extract(rn, "(?<=p_)\\d+"))]
+
+ggplot(df, aes(x=P, y=M, group=variable, color = variable)) +
+  geom_point() +
+  geom_line() +
+  geom_errorbar(mapping = aes(ymin = L, ymax=U), width =0.2) +
+  theme_bw() +
+  scale_y_continuous(trans='log10')+
+  theme(legend.position = 'bottom') +
+  labs(x= 'graph size (P)', y='runtime (seconds)',color ='')  +
+  scale_color_jama()
+ggsave('runtime_vs_p.pdf',width = 6, height = 4.5)
+
+ggplot(df[variable!='GMSS (adaptive)',], aes(x=P, y=M, group=variable, color = variable)) +
+  geom_point() +
+  geom_line() +
+  geom_errorbar(mapping = aes(ymin = L, ymax=U), width =0.2) +
+  theme_bw() +
+  scale_y_continuous(trans='log10')+
+  theme(legend.position = 'bottom') +
+  labs(x= 'graph size (P)', y='runtime (seconds)',color ='')  +
+  scale_color_manual(values = c('black','orange','red'))
+ggsave('runtime_vs_p_gm_gmn_gmss.pdf',width = 6, height = 4.5)
+
+mean(runtime_gmn[[5]])
+mean(runtime_gmss[[5]])
+
+dir <- '~/simulation_n_200_p_250_q_50_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0'
+setwd(dir)
+pt <-list()
+for(seed in 1:32){
+  load(paste0('out_GMSS_VBEM_noanneal_select_AIC_seed_',seed,'_prior_zeta_prop0.01_stddev500.rda'))
+  pt[[seed]] <- 
+              sapply(out$out, function(x){
+    tmp <- x$pt
+    units(tmp) <- 'secs'
+    return(tmp)
+  })
+}
+pt <- do.call('cbind',pt)
+pt <- apply(pt, 1, function(x)c(mean(x),sd(x),length(x)))
+pt <- data.table(t(pt))
+pt$v0 <- seq(1e-4,1,length.out = 16)
+colnames(pt)[1:3] <- c('M','SD','N')
+pt[,L:= M-1.96 * SD/sqrt(N)]
+pt[,U:= M+1.96 * SD/sqrt(N)]
+
+ggplot(pt, aes(v0, M)) +
+  geom_point() +
+  geom_errorbar(aes(ymin=L, ymax=U),width = 0.02) +
+  theme_bw() +
+  scale_y_continuous(trans = 'log10') + 
+  labs(x='spike standard deviation', y = 'runtime (seconds)')
+ggsave('runtime_GMSS_p250.pdf',width = 10,height = 4)
+
+runtime_gm <- runtime_gmn  <- runtime_gmss <-  runtime_gmss_adapttol <- 
+  index_gm <- it_gm <- vb_it_gm <-
+  index_gmn <- it_gmn <- vb_it_gmn <-
+  index_gmss <- it_gmss <- vb_it_gmss <- list() 
+vec_dir <- c(
+  '~/simulation_n_200_p_100_q_20_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0',
+  '~/simulation_n_200_p_100_q_50_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0',
+  '~/simulation_n_200_p_100_q_100_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0'
+)
+
+for(dir in vec_dir){
+  setwd(dir)
+  runtime_gm[[dir]] <- runtime_gmn[[dir]]  <- runtime_gmss[[dir]] <-  runtime_gmss_adapttol[[dir]] <- c()
+  index_gm[[dir]]<- it_gm[[dir]] <- vb_it_gm[[dir]]<- 
+    index_gmn[[dir]]<- it_gmn[[dir]] <- vb_it_gmn[[dir]]<- 
+    index_gmss[[dir]]<- it_gmss[[dir]] <- vb_it_gmss[[dir]]<- list()
+  
+  for(seed in 1:32){
+    load(paste0('out_GM_VBEM_noanneal_select_AIC_seed_',seed,'_prior_zeta_prop0.01_stddev500.rda'))
+    tmp <- out$pt
+    units(tmp) <- 'secs'
+    runtime_gm[[dir]] <- c(runtime_gm[[dir]], tmp)
+    
+    index_gm[[dir]][[seed]] <- out$index
+    it_gm[[dir]][[seed]] <- sapply(out$out, function(x)x$it)
+    vb_it_gm[[dir]][[seed]] <- sapply(out$out, function(x)max(x$vec_vb_it))
+    
+    load(paste0('out_GMN_VBEM_noanneal_select_AIC_seed_',seed,'_prior_zeta_prop0.01_stddev500.rda'))
+    tmp <- out$pt
+    units(tmp) <- 'secs'
+    runtime_gmn[[dir]] <- c(runtime_gmn[[dir]], tmp)
+    
+    index_gmn[[dir]][[seed]] <- out$index
+    it_gmn[[dir]][[seed]] <- sapply(out$out, function(x)x$it)
+    vb_it_gmn[[dir]][[seed]] <- sapply(out$out, function(x)max(x$vec_vb_it))
+    
+    load(paste0('out_GMSS_VBEM_noanneal_select_AIC_seed_',seed,'_prior_zeta_prop0.01_stddev500.rda'))
+    tmp <- out$pt
+    units(tmp) <- 'secs'
+    runtime_gmss[[dir]] <- c(runtime_gmss[[dir]], tmp)
+    
+    index_gmss[[dir]][[seed]] <- out$index
+    it_gmss[[dir]][[seed]] <- sapply(out$out, function(x)x$it)
+    vb_it_gmss[[dir]][[seed]] <- sapply(out$out, function(x)max(x$vec_vb_it))
+    
+    load(paste0('out_GMSS_VBEM_noanneal_adapttol_select_AIC_seed_',seed,'_prior_zeta_prop0.01_stddev500.rda'))
+    tmp <- out$pt
+    units(tmp) <- 'secs'
+    runtime_gmss_adapttol[[dir]] <- c(runtime_gmss_adapttol[[dir]], tmp)
+  }
+}
+
+sapply(lapply(index_gm, unlist), quantile)
+sapply(lapply(index_gm, unlist), function(x)sum(x==1))
+sapply(lapply(index_gm, unlist), function(x)sum(x==16))
+sapply(lapply(it_gm, unlist), quantile)
+sapply(lapply(vb_it_gm, unlist), quantile)
+
+sapply(lapply(index_gmn, unlist), quantile)
+sapply(lapply(index_gmn, unlist), function(x)sum(x==1))
+sapply(lapply(index_gmn, unlist), function(x)sum(x==16))
+sapply(lapply(it_gmn, unlist), quantile)
+sapply(lapply(vb_it_gmn, unlist), quantile)
+
+sapply(lapply(index_gmss, unlist), quantile)
+sapply(lapply(index_gmss, unlist), function(x)sum(x==1))
+sapply(lapply(index_gmss, unlist), function(x)sum(x==16)) 
+sapply(lapply(it_gmss, unlist), quantile)
+sapply(lapply(vb_it_gmss, unlist), quantile)
+
+runtime_gm <- do.call('rbind', runtime_gm)
+runtime_gm <- apply(runtime_gm, 1, function(x){c(mean(x), sd(x), length(x))})
+runtime_gmn <- do.call('rbind', runtime_gmn)
+runtime_gmn <- apply(runtime_gmn, 1, function(x){c(mean(x), sd(x), length(x))})
+runtime_gmss <- do.call('rbind', runtime_gmss)
+runtime_gmss <- apply(runtime_gmss, 1, function(x){c(mean(x), sd(x), length(x))})
+runtime_gmss_adapttol <- do.call('rbind', runtime_gmss_adapttol)
+runtime_gmss_adapttol <- apply(runtime_gmss_adapttol, 1, function(x){c(mean(x), sd(x), length(x))})
+
+df <- data.table(rbind(t(runtime_gm),t(runtime_gmn),t(runtime_gmss),t(runtime_gmss_adapttol)), keep.rownames = T)
+df$variable <- rep(c('GM','GMN','GMSS','GMSS (adaptive)'), each = length(unique(df$rn)))
+setnames(df, c(paste0('V',1:3)), c('M','SD','N'))
+df[,L:=M-1.96 * SD/sqrt(N)]
+df[,U:=M+1.96 * SD/sqrt(N)]
+df[,Q := as.numeric(str_extract(rn, "(?<=q_)\\d+"))]
+
+ggplot(df, aes(x=Q, y=M, group=variable, color = variable)) +
+  geom_point() +
+  geom_line() +
+  geom_errorbar(mapping = aes(ymin = L, ymax=U), width =0.2) +
+  theme_bw() +
+  scale_y_continuous(trans='log10')+
+  theme(legend.position = 'bottom') +
+  labs(x= 'number of variables (Q)', y='runtime (seconds)',color ='')  +
+  scale_color_jama() 
+ggsave('runtime_vs_q.pdf',width = 6, height = 4.5)
+
+ggplot(df[variable!='GMSS (adaptive)'], aes(x=Q, y=M, group=variable, color = variable)) +
+  geom_point() +
+  geom_line() +
+  geom_errorbar(mapping = aes(ymin = L, ymax=U), width =0.2) +
+  theme_bw() +
+  scale_y_continuous(trans='log10')+
+  theme(legend.position = 'bottom') +
+  labs(x= 'number of variables (Q)', y='runtime (seconds)',color ='')  +
+  scale_color_jama() 
+ggsave('runtime_vs_q_gm_gmn_gmss.pdf',width = 6, height = 4.5)
+
+ggplot(df[variable!='GMSS (adaptive)' & variable!='GM',], aes(x=Q, y=M, group=variable, color = variable)) +
+  geom_point() +
+  geom_line() +
+  geom_errorbar(mapping = aes(ymin = L, ymax=U), width =0.2) +
+  theme_bw() +
+  scale_y_continuous(trans='log10')+
+  theme(legend.position = 'bottom') +
+  labs(x= 'number of auxiliary variables (Q)', y='runtime (seconds)',color ='')  +
+  scale_color_manual(values = c('orange','red'))
+ggsave('runtime_vs_gmn_gmss.pdf',width = 6, height = 4.5)
+p = 100
+n0 <- t02 <- c()
+for(proportion in c(0.005, 0.01,0.03)){
+  for(stddev in c(50, 100, 500)){
+    m <- round(p*(p-1)/2 * proportion)
+    est <- get_n0_t02(p*(p-1)/2, c(m, stddev^2))
+    n0 <- c(n0, est$n0)
+    t02 <- c(t02, est$t02)
+  }
+}
+
+
+# low auxiliary variables
+setwd('~/simulation_n_200_p_100_q_3_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0/')
+setwd('~/simulation_n_200_p_100_q_50_q0_3_zeta_-1.5_noise_0.1_codata_TRUE_hub_TRUE_corr_0/')
+setwd('~/simulation_n_200_p_100_q_50_q0_0_zeta_-1.84_noise_0_codata_FALSE_hub_FALSE_corr_0/')
+
+GMN_pt <- GMSS_pt <- c()
+for(seed in 1:32){
+  load(paste0('out_GMN_VBEM_noanneal_select_AIC_seed_',seed,'_prior_zeta_prop0.01_stddev500.rda'))
+  units(out$pt) <- 'secs'
+  GMN_pt <- c(GMN_pt, out$pt)
+  load(paste0('out_GMSS_VBEM_noanneal_select_AIC_seed_',seed,'_prior_zeta_prop0.01_stddev500.rda'))
+  units(out$pt) <- 'secs'
+  GMSS_pt <- c(GMSS_pt, out$pt)
+}
+quantile(GMN_pt)
+quantile(GMSS_pt)
+
+list_GM <- list_true_GM <- list_GMN <- list_true_GMN <- list_GMSS <- list_true_GMSS <-
+  list_GMSS_c <- list_true_GMSS_c <- 
+  list_GMN_beta <- list_true_GMN_beta <- list_GMSS_beta <- list_true_GMSS_beta  <- list()
+GMN_zeta <- GMSS_zeta <- c()
+for(seed in 1:32){
+  load(paste0('out_GM_VBEM_noanneal_select_AIC_seed_',seed,'_prior_zeta_prop0.01_stddev500.rda'))
+  bool_up <- upper.tri(net$A)
+  list_GM[[seed]] <- out$m_delta[bool_up]
+  list_true_GM[[seed]] <- net$A[bool_up]
+  load(paste0('out_GMN_VBEM_noanneal_select_AIC_seed_',seed,'_prior_zeta_prop0.01_stddev500.rda'))
+  list_GMN[[seed]] <- out$m_delta[bool_up]
+  list_true_GMN[[seed]] <- net$A[bool_up]
+  list_GMN_beta[[seed]] <- out$mu_beta
+  list_true_GMN_beta[[seed]] <- beta_true
+  GMN_zeta <- c(GMN_zeta, out$mu_zeta)
+  load(paste0('out_GMSS_VBEM_noanneal_select_AIC_seed_',seed,'_prior_zeta_prop0.01_stddev500.rda'))
+  list_GMSS[[seed]] <- out$m_delta[bool_up]
+  list_true_GMSS[[seed]] <- net$A[bool_up]
+  list_GMSS_c[[seed]] <- out$m_gamma
+  list_true_GMSS_c[[seed]] <- beta_true!=0
+  list_GMSS_beta[[seed]] <- out$mu_beta
+  list_true_GMSS_beta[[seed]] <- beta_true
+  GMSS_zeta <- c(GMSS_zeta, out$mu_zeta)
+}
+
+ids <- sapply(list_GMSS_c, function(x)which(x>=0.5))
+id <- which(sapply(ids, function(x)length(x)!=3))
+ids[id]
+do.call('rbind',list_GMSS_beta)[id,]
+
+list_GMN_beta[id]
+
+ids[1]
+do.call('rbind',list_GMN_beta)[1,]
+do.call('rbind',list_GMSS_beta)[1,]
+
+library(data.table)
+library(ggplot2)
+df <- data.table()
+for(seed in 1:32){
+load(paste0('data_seed',seed,'.rda'))
+degs <- apply(net$A, 2, sum)
+tmp <- data.table(cbind(V,degs))
+tmp$seed <- seed
+df <- rbind(df,tmp)
+}
+df <- melt(df, id.vars = c('seed', 'degs'))
+ggplot(df, aes(value, degs))+
+  geom_point() +
+  geom_smooth(method = 'lm') +
+  facet_grid(seed ~ variable, scales = 'free') +
+  theme_bw()
+ggsave('dataplot.pdf' , width = 9, height = 32)
+
+t(sapply(list_GMSS_c, function(x)x>=0.5))
+tmp <- df[,{
+  linear_model <- lm(degs ~ value)
+  coef(linear_model)[2]
+}, by = c('variable', 'seed')]
+dcast(tmp, seed ~ variable)
+
+
+plot(apply(do.call('rbind',list_GMN_beta), 2, mean))
+plot(apply(do.call('rbind',list_GMSS_beta), 2, mean))
+mean(GMN_zeta)
+mean(GMSS_zeta)
