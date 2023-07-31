@@ -233,6 +233,4 @@ plot_network <- function(x, cex = 0.5, node_names = NULL, ...){
   V(g)$label.cex <- cex
   pg <- plot(g, layout=lay, vertex.color="yellow", vertex.label = node_names, ...)
 
-  return(pg)
-
 }
