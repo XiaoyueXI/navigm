@@ -3,7 +3,8 @@
 #
 # Internal functions to call the variational EM algorithm for GMSS
 
-
+#' @importFrom matrixcalc is.symmetric.matrix is.positive.definite
+#' @importFrom Matrix nearPD
 gmss_vbem_core  <- function(Y,
                             V,
                             list_hyper = NULL,

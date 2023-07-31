@@ -1,26 +1,26 @@
 {
-    "id": "DDA2650C",
-    "path": "~/navigm/R/fun_summary.R",
-    "project_path": "R/fun_summary.R",
+    "id": "CE3AC81F",
+    "path": "~/navigm/R/gmss_em_core.R",
+    "project_path": "R/gmss_em_core.R",
     "type": "r_source",
     "hash": "0",
     "contents": "",
     "dirty": false,
-    "created": 1690483748559.0,
+    "created": 1690739504120.0,
     "source_on_save": false,
-    "relative_order": 3,
+    "relative_order": 19,
     "properties": {
         "source_window_id": "",
         "Source": "Source",
-        "cursorPosition": "52,15",
-        "scrollLine": "45"
+        "cursorPosition": "301,18",
+        "scrollLine": "292"
     },
     "folds": "",
-    "lastKnownWriteTime": 1690562594,
+    "lastKnownWriteTime": 1690741887,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1690562594365,
+    "last_content_update": 1690741887009,
     "read_only": false,
     "read_only_alternatives": []
 }

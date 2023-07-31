@@ -1,0 +1,26 @@
+{
+    "id": "ED0B2931",
+    "path": "~/navigm/R/gmn_vbem_core.R",
+    "project_path": "R/gmn_vbem_core.R",
+    "type": "r_source",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1690739493728.0,
+    "source_on_save": false,
+    "relative_order": 18,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "6,28",
+        "scrollLine": "4"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1690739496,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1690739496655,
+    "read_only": false,
+    "read_only_alternatives": []
+}

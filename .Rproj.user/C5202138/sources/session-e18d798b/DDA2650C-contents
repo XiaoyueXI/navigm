@@ -9,6 +9,9 @@
 #   perf
 #
 # }
+
+
+#' @export
 AIC_GSS <- function(estimates, N){
 
   Omega <- estimates$Omega
@@ -22,6 +25,7 @@ AIC_GSS <- function(estimates, N){
 }
 
 
+#' @export
 BIC_GSS <- function(estimates, N){
 
   Omega <- estimates$Omega
@@ -34,6 +38,8 @@ BIC_GSS <- function(estimates, N){
 
 }
 
+
+#' @export
 EBIC_GSS <- function(estimates, gamma =0.5, N, P){
 
   Omega <- estimates$Omega
@@ -46,11 +52,12 @@ EBIC_GSS <- function(estimates, gamma =0.5, N, P){
 
 }
 
-
+#' @import ROCR
+#' @export
 plot_roc <- function(ppi, pat, col, lty = 1,
                      add = FALSE, fpr_stop = 1,
                      main = "ROC curves") {
-  library(ROCR)
+
   pred <- ROCR::prediction(ppi,pat)
   perf <- ROCR::performance(pred, measure = "tpr", x.measure = "fpr")
 
@@ -62,8 +69,10 @@ plot_roc <- function(ppi, pat, col, lty = 1,
 }
 
 
+#' @import ROCR
+#' @export
 compute_pauc <- function(ppi, pat,  fpr_stop = 1, standardise = F) {
-  library(ROCR)
+
   pred <- ROCR::prediction(ppi,pat)
   perf <- performance(pred, measure = 'auc',fpr.stop = fpr_stop)
   pauc <- do.call('c',perf@y.values)
@@ -74,10 +83,11 @@ compute_pauc <- function(ppi, pat,  fpr_stop = 1, standardise = F) {
   }
 
   return(pauc)
+
 }
 
-# plot_ppi(gmss_vbem$estimates$m_gamma, ylab = "PIP")
-# plot_ppi(beta_true_gmss, condition = (beta_true_gmss!=0))
+
+#' @export
 plot_ppi <- function(ppi, ppi_names = NULL, col ='black', condition = (ppi >=0.5),
                      xlab = 'auxiliary variables', ylab = 'effect sizes',...){
 
@@ -91,6 +101,8 @@ plot_ppi <- function(ppi, ppi_names = NULL, col ='black', condition = (ppi >=0.5
 
 }
 
+
+#' @export
 compute_perf <- function(ppi, pat, threshold){
 
   pat <- as.logical(pat)
@@ -107,8 +119,11 @@ compute_perf <- function(ppi, pat, threshold){
 
 }
 
+
+#' @import igraph
+#' @export
 plot_network <- function(x, cex = 0.5, node_names = NULL){
-  library(igraph, warn.conflicts = F)
+
   x <- x == 1
   diag(x) <- F
   if(is.null(node_names)){
@@ -120,4 +135,5 @@ plot_network <- function(x, cex = 0.5, node_names = NULL){
   pg <- plot(g, layout=lay, vertex.color="yellow", vertex.label = node_names)
 
   return(pg)
+
 }

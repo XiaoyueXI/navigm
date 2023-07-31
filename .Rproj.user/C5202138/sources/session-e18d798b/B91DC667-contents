@@ -1,5 +1,5 @@
 Package: navigm
-Title: Node-level auxiliary variables for improved graphical model inference.
+Title: Node-level auxiliary variables for improved graphical model inference
 Version: 0.1.0
 Authors@R: c(
  person("Xiaoyue", "Xi", email = "xiaoyue.xi94@gmail.com", role = c("aut", "cre")),

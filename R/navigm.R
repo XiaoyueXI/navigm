@@ -27,7 +27,7 @@
 #'   set to default, \code{lambda = 2, vec_v0 = seq(1e-4, 1, length.out = 16), v1 = 100, a_tau = b_tau = a_sigma = b_sigma = 2},
 #'   \code{n0 = -2, t02 = 0.5, a_o = 1, b_o = Q, a_rho = 1, b_rho = P}.
 #'
-#'  @param ne0 Vector of length 2 whose entries are the prior expectation and variance of
+#' @param ne0 Vector of length 2 whose entries are the prior expectation and variance of
 #'  the number of edges in absence of hubs. Will not be used if \code{n0} in \code{list_hyper} is non-\code{NULL}.
 #'
 #' @param list_init A list containing the initial variational parameters if \code{inference = 'VBEM'}:
@@ -50,42 +50,42 @@
 #'  if \code{NULL} or any initialisation is missing,
 #'  set to default, \code{beta}: vector of zeros, \code{tau_1 = tau_2 = 1}, \code{zeta = list_hyper$n0}, \code{o = 1 / Q}, \code{rho = 1 / P}.
 #'
-#'  @param method Character: the method to be used, including
+#' @param method Character: the method to be used, including
 #'  'GM' (vanilla spike-and-slab graphical model),
 #'  'GMN' (spike-and-slab graphical model with normal prior for the node-level auxiliary variable coefficients), and
 #'  'GMSS' (default; spike-and-slab graphical model with spike-and-slab prior for the node-level auxiliary variable coefficients).
 #'
-#'  @param criterion Character: the model selection criterion to be used, including
+#' @param criterion Character: the model selection criterion to be used, including
 #'  'AIC' (default), 'BIC' and 'EBIC'.
 #'
-#'  @param inference Character: the inference algorithm to be used, including
+#' @param inference Character: the inference algorithm to be used, including
 #'  'EM' (expectation maximisation algorithm),
 #'  'VBEM' (default; variational Bayes expectation maximisation algorithm),
 #'
-#'  @param tol Scalar: tolerance for the stopping criterion (default is 0.1).
+#' @param tol Scalar: tolerance for the stopping criterion (default is 0.1).
 #'
-#'  @param maxit Scalar: maximum number of iterations allowed (default is 1000).
+#' @param maxit Scalar: maximum number of iterations allowed (default is 1000).
 #'
-#'  @param transformV Logical; if \code{FALSE} (default), \code{V} will not be transformed;
+#' @param transformV Logical; if \code{FALSE} (default), \code{V} will not be transformed;
 #'  Otherwise and if \code{V} does not range within [0,1],  \code{V} will be standardised within \code{navigm} call.
 #'
-#'  @param verbose Logical; if \code{TRUE} (default), standard verbosity; otherwise, no messages.
+#' @param verbose Logical; if \code{TRUE} (default), standard verbosity; otherwise, no messages.
 #'
-#'  @param track_ELBO Logical; if \code{TRUE} (default), track ELBO after each maximisation step; otherwise, not track.
+#' @param track_ELBO Logical; if \code{TRUE} (default), track ELBO after each maximisation step; otherwise, not track.
 #'
-#'  @param debug Logical; if \code{FALSE} (default), not record additional terms for the purpose of debug;
+#' @param debug Logical; if \code{FALSE} (default), not record additional terms for the purpose of debug;
 #'  otherwise, record the number of decreasing ELBOs in the maximisation step, possibly due to numerical round-off;
 #'  and ELBOs and number of decreasing ELBOs within each variational update (only in the VBEM).
 #'
-#'  @param version Integer; take values of 1 (a beta prior on edge inclusion) or 2 (a normal prior on probit edge inclusion) only.
+#' @param version Integer; take values of 1 (a beta prior on edge inclusion) or 2 (a normal prior on probit edge inclusion) only.
 #'  Only valid when \code{method = 'GM'}.
 #'
-#'  @param full_output Logical; if \code{FALSE}, the estimation for the selected model is returned.
+#' @param full_output Logical; if \code{FALSE}, the estimation for the selected model is returned.
 #'  Otherwise, the estimations are returned for all the explored models.
 #'
-#'  @param numCores number of cores for parallel computation.
+#' @param numCores number of cores for parallel computation.
 #'
-#'  @details \code{navigm} implements a Gaussian graphical model
+#' @details \code{navigm} implements a Gaussian graphical model
 #'   that allows incorporating and selecting node-level auxiliary variables,
 #'   thereby enhancing the detection of conditional dependence. Inference is
 #'   carried out using a scalable (variational) expectation maximisation
@@ -148,7 +148,9 @@
 #' # res_navigm <- navigm(Y, V, method = 'GM', inference = 'EM', version = 1)
 #' # res_navigm <- navigm(Y, V, method = 'GM', inference = 'EM', version = 2)
 #'
-#' @import doParallel parallel foreach matrixcalc
+#' @importFrom parallel detectCores
+#' @importFrom doParallel registerDoParallel
+#' @import foreach
 #' @export
 #'
 
@@ -175,9 +177,9 @@ navigm <- function(Y, V =NULL,
   # Set up
   #
   if(is.null(numCores)){
-    numCores <- detectCores()
+    numCores <- parallel::detectCores()
   }
-  registerDoParallel(numCores)
+  doParallel::registerDoParallel(numCores)
 
   #
 

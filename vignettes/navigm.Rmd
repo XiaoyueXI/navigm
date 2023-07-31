@@ -1,6 +1,6 @@
 ---
 title: Node-level auxiliary variables for improved graphical model inference (navigm)
-author:  Xiaoyue Xi, Sylvia Richardson, Helene Ruffieux
+author: Xiaoyue Xi, Sylvia Richardson, Helene Ruffieux
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteEngine{knitr::rmarkdown}

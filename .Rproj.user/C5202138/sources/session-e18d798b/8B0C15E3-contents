@@ -4,7 +4,8 @@
 # Internal functions to call the EM algorithm for GMN
 
 
-
+#' @importFrom matrixcalc is.symmetric.matrix is.positive.definite
+#' @importFrom Matrix nearPD
 gmn_em_core <-  function(Y,
                          V = NULL,
                          list_hyper = NULL,
@@ -281,6 +282,7 @@ gmn_em_core <-  function(Y,
                          zeta,
                          tau2,
                          E2,
+                         V,
                          sV,
                          pV,
                          spV1,

@@ -1,26 +1,26 @@
 {
-    "id": "B91DC667",
-    "path": "~/navigm/DESCRIPTION",
-    "project_path": "DESCRIPTION",
-    "type": "dcf",
+    "id": "CCE84B4D",
+    "path": "~/navigm/R/gm_vbem_core.R",
+    "project_path": "R/gm_vbem_core.R",
+    "type": "r_source",
     "hash": "0",
     "contents": "",
     "dirty": false,
-    "created": 1690562616781.0,
+    "created": 1690739431415.0,
     "source_on_save": false,
-    "relative_order": 8,
+    "relative_order": 17,
     "properties": {
         "source_window_id": "",
         "Source": "Source",
-        "cursorPosition": "20,13",
-        "scrollLine": "6"
+        "cursorPosition": "6,28",
+        "scrollLine": "0"
     },
     "folds": "",
-    "lastKnownWriteTime": 1690564049,
+    "lastKnownWriteTime": 1690739434,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1690564049653,
+    "last_content_update": 1690739434198,
     "read_only": false,
     "read_only_alternatives": []
 }
