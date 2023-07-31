@@ -4,7 +4,7 @@ author: Xiaoyue Xi, Sylvia Richardson, Helene Ruffieux
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteEngine{knitr::rmarkdown}
-  \VignetteIndexEntry{Node-level auxiliary variables for improved graphical model inference (navigm)}
+  %\VignetteIndexEntry{Node-level auxiliary variables for improved graphical model inference (navigm)}
   %\VignetteEncoding{UTF-8}
 ---
 

@@ -2,7 +2,7 @@
 % Please edit documentation in R/fun_summary.R
 \name{plot_network}
 \alias{plot_network}
-\title{This function plots the undirected and unweighted networks based on an adjacency matrix (typically useful when the network is small).}
+\title{Plot network.}
 \usage{
 plot_network(x, cex = 0.5, node_names = NULL, ...)
 }
@@ -12,6 +12,8 @@ plot_network(x, cex = 0.5, node_names = NULL, ...)
 \item{cex}{Scalar. The amount by which vertex label sizes should be magnified relative to the default.}
 
 \item{node_names}{A vector of same length as the number of rows & columns of \code{x} and containing vertex names.}
+
+\item{...}{other plotting arguments. Full details see \code{igraph::plot}.}
 }
 \description{
 This function plots the undirected and unweighted networks based on an adjacency matrix (typically useful when the network is small).

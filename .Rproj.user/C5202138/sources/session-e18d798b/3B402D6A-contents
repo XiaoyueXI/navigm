@@ -547,20 +547,20 @@ gmss_vbem_core  <- function(Y,
 
     # % # Omega
     #
-    bool_cpp <- F
-    if (bool_cpp) {
-      bool_direct_solve <-  F # keep F as otherwise Omega inverted at each iteration
-      if (bool_direct_solve) {
-        out <- M_Omega_direct_solve(N, P, Omega, S, lambda, m_tau * E1)
-        Omega <- out$Omega
-      } else {
-        out <- M_Omega(N, P, Sigma, Omega, S, lambda, m_tau * E1)
-        Omega <- out$Omega
-        Sigma <- out$Sigma
-      }
-    } else {
+    # bool_cpp <- F
+    # if (bool_cpp) {
+    #   bool_direct_solve <-  F # keep F as otherwise Omega inverted at each iteration
+    #   if (bool_direct_solve) {
+    #     out <- M_Omega_direct_solve(N, P, Omega, S, lambda, m_tau * E1)
+    #     Omega <- out$Omega
+    #   } else {
+    #     out <- M_Omega(N, P, Sigma, Omega, S, lambda, m_tau * E1)
+    #     Omega <- out$Omega
+    #     Sigma <- out$Sigma
+    #   }
+    # } else {
       Omega <- get_omega(m_tau * E1, S, Omega, lambda, N, P)
-    }
+    # }
     # % #
 
     #

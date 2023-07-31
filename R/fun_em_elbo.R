@@ -42,6 +42,8 @@ get_elbo_gm_em_v1 <- function(Omega,
 }
 
 
+
+
 get_elbo_gm_em_v2 <- function(Omega,
                               zeta,
                               tau1,
@@ -53,8 +55,8 @@ get_elbo_gm_em_v2 <- function(Omega,
                               lambda,
                               v0,
                               v1,
-                              a_rho,
-                              b_rho,
+                              n0,
+                              t02,
                               a_tau,
                               b_tau,
                               N,

@@ -39,21 +39,21 @@ net <-  generate_data_from_adjancency(N = N, A = A)
 ########################
 
 
-gmss_vbem <- navigm(net$Y, V,
+gmss_vbem <- navigm(net$Y, V, numCores = 2,
                     list_hyper = list(v0_v = seq(1e-4, 1, length.out = 16)))
-gmn_vbem <- navigm(net$Y, V, method = 'GMN',
+gmn_vbem <- navigm(net$Y, V, method = 'GMN', numCores = 2,
                    list_hyper = list(v0_v = seq(1e-4, 1, length.out = 16)))
-gm_v1_vbem <- navigm(net$Y, V, method = 'GM', version = 1,
+gm_v1_vbem <- navigm(net$Y, V, method = 'GM', version = 1, numCores = 2,
                      list_hyper = list(v0_v = seq(1e-4, 1, length.out = 16)))
-gm_v2_vbem <- navigm(net$Y, V, method = 'GM', version = 2,
+gm_v2_vbem <- navigm(net$Y, V, method = 'GM', version = 2, numCores = 2,
                      list_hyper = list(v0_v = seq(1e-4, 1, length.out = 16)))
 
-gmss_em <- navigm(net$Y, V, inference = 'EM',
+gmss_em <- navigm(net$Y, V, inference = 'EM',numCores = 2,
                   list_hyper = list(v0_v = seq(1e-4, 1, length.out = 16)))
-gmn_em <- navigm(net$Y, V, method = 'GMN', inference = 'EM',
+gmn_em <- navigm(net$Y, V, method = 'GMN', inference = 'EM', numCores = 2,
                  list_hyper = list(v0_v = seq(1e-4, 1, length.out = 16)))
-gm_v1_em <- navigm(net$Y, V, method = 'GM', version = 1, inference = 'EM',
+gm_v1_em <- navigm(net$Y, V, method = 'GM', version = 1, inference = 'EM', numCores = 2,
                    list_hyper = list(v0_v = seq(1e-4, 1, length.out = 16)))
-gm_v2_em <- navigm(net$Y, V, method = 'GM', version = 2, inference = 'EM',
+gm_v2_em <- navigm(net$Y, V, method = 'GM', version = 2, inference = 'EM', numCores = 2,
                    list_hyper = list(v0_v = seq(1e-4, 1, length.out = 16)))
 

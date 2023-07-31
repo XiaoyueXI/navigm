@@ -3,7 +3,7 @@
     "path": "~/navigm/R/fun_utils.R",
     "project_path": "R/fun_utils.R",
     "type": "r_source",
-    "hash": "1135777267",
+    "hash": "0",
     "contents": "",
     "dirty": false,
     "created": 1690738822599.0,
@@ -12,15 +12,15 @@
     "properties": {
         "source_window_id": "",
         "Source": "Source",
-        "cursorPosition": "211,15",
-        "scrollLine": "203"
+        "cursorPosition": "203,2",
+        "scrollLine": "202"
     },
     "folds": "",
-    "lastKnownWriteTime": 1690741558,
+    "lastKnownWriteTime": 1690819594,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1690741558898,
+    "last_content_update": 1690819594781,
     "read_only": false,
     "read_only_alternatives": []
 }

@@ -156,7 +156,7 @@ get_annealing_ladder_ <- function(anneal, verbose) {
 
 }
 
-#
+#' @importFrom stats setNames
 create_named_list_ <- function(...) {
   setNames(list(...), as.character(match.call()[-1]))
 
@@ -202,17 +202,20 @@ effective_sum <- function(x) {
 }
 
 # Functions for hyperparameter settings
-#
+
+
+#' @importFrom stats pnorm
 E_Phi_X <- function(mu, s2, lower_tail = TRUE) {
 
-  pnorm(mu / sqrt(1 + s2), lower.tail = lower_tail)
+  stats::pnorm(mu / sqrt(1 + s2), lower.tail = lower_tail)
 
 }
 
 #' @importFrom PowerTOST OwensT
+#' @importFrom stats pnorm
 E_Phi_X_2 <- function(mu, s2) {
 
-  pnorm(mu / sqrt(1 + s2)) -
+  stats::pnorm(mu / sqrt(1 + s2)) -
     2 * PowerTOST::OwensT(mu / sqrt(1 + s2), 1 / sqrt(1 + 2 * s2))
 
 }
@@ -223,14 +226,14 @@ get_V_p_t <- function(mu, s2, p) {
     p * E_Phi_X(mu, s2)
 }
 
-
+#' @importFrom stats qnorm
 get_mu <- function(E_p_t, s2, p) {
 
-  sqrt(1 + s2) * qnorm(E_p_t / p)
+  sqrt(1 + s2) * stats::qnorm(E_p_t / p)
 
 }
 
-
+#' @importFrom stats uniroot
 get_n0_t02 <- function(p, p_star) {
 
   E_p_t <- p_star[1]
@@ -244,7 +247,7 @@ get_n0_t02 <- function(p, p_star) {
   #
   # Look at : gam_st | theta_s = 0
   #
-  tryCatch(t02 <- uniroot(function(x)
+  tryCatch(t02 <- stats::uniroot(function(x)
     get_V_p_t(get_mu(E_p_t, x, p), x, p) - V_p_t,
     interval = c(dn, up))$root,
     error = function(e) {
@@ -260,22 +263,32 @@ get_n0_t02 <- function(p, p_star) {
 }
 
 
-
+#' Simulate precision matrices and data given an adjacency matrix.
+#'
+#' This function simulates precision matrices and the observations based on pre-specified adjacency matrix, inspired by Learning Graphical Models With Hubs, JMLR, 2014, P.3307.
+#'
+#' @param N Scalar. Number of observations.
+#' @param A An adjacency matrix.
+#' @param vec_magnitude A vector of two positive numbers indicating the range of absolute magnitudes of precision matrix entries.
+#' @param bool_scale Logical. If TRUE (default), scale the samples; otherwise, not scale.
+#'
+#' @return Input adjacency matrix \code{A}, simulated precision matrix \code{Omega}, observations \code{Y}.
 #' @importFrom mvtnorm rmvnorm
+#' @importFrom stats runif
 #' @export
 generate_data_from_adjancency <- function(N,
                                           A,
                                           vec_magnitude = c(0.25, 0.75),
                                           bool_scale = TRUE) {
 
-  # same generation procedure as in Learning Graphical Models With Hubs, JMLR, 2014, P.3307
+  #
   P <- nrow(A)
   nb_edges <- sum(A == 1)
 
   # matrix E
   E <- A
 
-  E[A == 1] <- runif(nb_edges, min = vec_magnitude[1], max = vec_magnitude[2])
+  E[A == 1] <- stats::runif(nb_edges, min = vec_magnitude[1], max = vec_magnitude[2])
 
   E_bar <- (E + t(E)) / 2
 
@@ -293,6 +306,7 @@ generate_data_from_adjancency <- function(N,
     Omega <- E_bar + 0.1 * diag(P)
   }
 
+  #
   Y <- mvtnorm::rmvnorm(N, rep(0, P), solve(Omega))
 
   if (bool_scale) {
@@ -303,11 +317,29 @@ generate_data_from_adjancency <- function(N,
 
 }
 
+#' Simulate beta distributed auxiliary variables.
+#'
+#' This function simulates auxiliary variable matrices in order to assess the package.
+#'
+#' @param P Scalar. Number of nodes in the graph.
+#' @param Q Scalar. Number of node-level auxiliary variables.
+#' @param alpha,beta Scalars. Shape parameters of beta distribution.
+#' @param Sigma A correlation matrix of auxiliary variables.
+#' @param min_gene Scalar. Number of influential entries per auxiliary variable.
+#' @param verbose Logical. If FALSE (default), not show messages; otherwise, show the messages.
+#'
+#'
 #' @importFrom MASS mvrnorm
+#' @importFrom stats pnorm cor qnorm runif
 #' @export
-generate_V <- function(P, Q, alpha, beta, Sigma, min_gene, verbose = F) {
+generate_V <- function(P, Q,
+                       alpha = 0.05, beta = 0.2,
+                       Sigma = diag(Q),
+                       min_gene = round(0.05 * P),
+                       verbose = F) {
   #
   if(P < Q){
+    warning('P < Q, set empirical = F. May not be comparable with those simulated under empirical = T.\n')
     Z <- MASS::mvrnorm(n = P,
                  mu = rep(0, nrow(Sigma)),
                  Sigma)
@@ -319,23 +351,30 @@ generate_V <- function(P, Q, alpha, beta, Sigma, min_gene, verbose = F) {
                  empirical = T)
   }
 
+  #
   bool_up <- upper.tri(cor(Z))
-  V <- t(qbeta(t(pnorm(Z, 0, sqrt(
+  V <- t(stats::qbeta(t(stats::pnorm(Z, 0, sqrt(
     diag(Sigma)
   ))), alpha, beta))
 
-  cat('Range of empirical correlations:', range(cor(V)[bool_up]), '\n')
-  cat('Range of absolute empirical correlations:', range(abs(cor(V)[bool_up])), '\n')
+  if(verbose){
+    cat('Range of empirical correlations:', range(stats::cor(V)[bool_up]), '\n')
+    cat('Range of absolute empirical correlations:', range(abs(cor(V)[bool_up])), '\n')
+  }
 
-  # set min_gene to ensure the enough signals for each codata
+
+  # set min_gene
+  #
   Vnz <- apply(V, 2, function(x)
     sum(x > 0.5))
+
   if (verbose)
     cat(sum(Vnz < min_gene),
         ' variant(s) do not have significant effects on gene expression.')
+
   if (any(Vnz < min_gene)) {
     for (j in which(Vnz < min_gene)) {
-      V[sample(P, min_gene), j] <- runif(min_gene, 0.9, 1)
+      V[sample(P, min_gene), j] <- stats::runif(min_gene, 0.9, 1)
     }
   }
   return(V)

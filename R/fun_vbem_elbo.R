@@ -47,7 +47,7 @@ e_omega <- function(Omega,
 ## E log p(delta, z | rest) - E log q(delta, z) ##
 
 ##################################################
-
+#' @importFrom stats pnorm
 e_delta_z <- function(m_delta,
                       m1_alpha,
                       sum_var_alpha,
@@ -58,8 +58,8 @@ e_delta_z <- function(m_delta,
 
   - sum_var_alpha/2 +
     #
-    sum(m_delta[bool_up] * pnorm(sqrt(c) * m1_alpha[bool_up], log.p = T, lower.tail = T)) +
-    sum((1-m_delta[bool_up]) * pnorm(sqrt(c) * m1_alpha[bool_up], log.p = T, lower.tail = F)) -
+    sum(m_delta[bool_up] * stats::pnorm(sqrt(c) * m1_alpha[bool_up], log.p = T, lower.tail = T)) +
+    sum((1-m_delta[bool_up]) * stats::pnorm(sqrt(c) * m1_alpha[bool_up], log.p = T, lower.tail = F)) -
     #
     sum(m_delta[bool_up] * log(m_delta[bool_up] + eps))-
     sum((1-m_delta[bool_up]) * log(1-m_delta[bool_up] + eps))

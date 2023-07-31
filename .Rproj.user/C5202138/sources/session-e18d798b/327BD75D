@@ -1,26 +1,26 @@
 {
-    "id": "3B402D6A",
-    "path": "~/navigm/R/gmss_vbem_core.R",
-    "project_path": "R/gmss_vbem_core.R",
+    "id": "327BD75D",
+    "path": "~/navigm/R/fun_summary.R",
+    "project_path": "R/fun_summary.R",
     "type": "r_source",
     "hash": "0",
     "contents": "",
     "dirty": false,
-    "created": 1690563184939.0,
+    "created": 1690811880899.0,
     "source_on_save": false,
-    "relative_order": 10,
+    "relative_order": 20,
     "properties": {
         "source_window_id": "",
         "Source": "Source",
-        "cursorPosition": "6,28",
-        "scrollLine": "0"
+        "cursorPosition": "161,24",
+        "scrollLine": "148"
     },
     "folds": "",
-    "lastKnownWriteTime": 1690739510,
+    "lastKnownWriteTime": 1690819662,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1690739510419,
+    "last_content_update": 1690819662330,
     "read_only": false,
     "read_only_alternatives": []
 }

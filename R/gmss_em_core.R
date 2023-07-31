@@ -307,18 +307,18 @@ gmss_em_core <-  function(Y,
     bool_cpp <- F
     bool_direct_solve <- F # keep F as otherwise Omega inverted at each iteration
 
-    if (bool_cpp) {
-      if (bool_direct_solve) {
-        out <- M_Omega_direct_solve(N, P, Omega, S, lambda, tau1 * E1)
-        Omega <- out$Omega
-      } else {
-        out <- M_Omega(N, P, Sigma, Omega, S, lambda, tau1 * E1)
-        Omega <- out$Omega
-        Sigma <- out$Sigma
-      }
-    } else {
+    # if (bool_cpp) {
+    #   if (bool_direct_solve) {
+    #     out <- M_Omega_direct_solve(N, P, Omega, S, lambda, tau1 * E1)
+    #     Omega <- out$Omega
+    #   } else {
+    #     out <- M_Omega(N, P, Sigma, Omega, S, lambda, tau1 * E1)
+    #     Omega <- out$Omega
+    #     Sigma <- out$Sigma
+    #   }
+    # } else {
       Omega <- get_omega(tau1 * E1, S, Omega, lambda, N, P)
-    }
+    # }
 
 
     #

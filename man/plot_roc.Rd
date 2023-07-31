@@ -15,7 +15,7 @@ plot_roc(ppi, pat, fpr_stop = 1, nci = 11, ...)
 
 \item{nci}{number of confidence bars if \code{ppi} and \code{pat} are lists.}
 
-\item{...}{other plotting arguments, such as \code{col}, \code{add}. Full details see \code{ROCR}.}
+\item{...}{other plotting arguments, such as \code{col}, \code{add}. Full details see \code{ROCR::plot}.}
 }
 \description{
 This function plots the truncated receiver operating characteristic (ROC) curves at

@@ -11,9 +11,22 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.2.3
+Imports:
+     MASS,
+     Matrix,
+     PowerTOST,
+     ROCR,
+     doParallel,
+     foreach,
+     igraph, 
+     matrixcalc,
+     mvtnorm
 Suggests: 
     knitr,
     rmarkdown,
+    devtools,
+    reshape,
+    ggplot2,
     testthat (>= 3.0.0)
 VignetteBuilder: knitr
 Config/testthat/edition: 3

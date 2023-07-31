@@ -203,13 +203,16 @@ compute_perf <- function(ppi, pat, threshold = 0.5){
 
 }
 
-
+#' Plot network.
+#'
 #' This function plots the undirected and unweighted networks based on an adjacency matrix (typically useful when the network is small).
 #'
 #' @param x A adjacency matrix.
 #' @param cex Scalar. The amount by which vertex label sizes should be magnified relative to the default.
 #' @param node_names A vector of same length as the number of rows & columns of \code{x} and containing vertex names.
+#'
 #' @import igraph
+#'
 #' @export
 plot_network <- function(x, cex = 0.5, node_names = NULL, ...){
 

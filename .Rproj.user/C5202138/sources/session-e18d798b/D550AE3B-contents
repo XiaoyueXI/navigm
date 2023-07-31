@@ -65,7 +65,7 @@ update_alpha_sigma <- function(m_gamma, a_sigma, c = 1) {
   c * (sum(m_gamma) / 2 + a_sigma -1) + 1
 }
 
-update_beta_sigma <- function(m_gamma, m2_beta, b, c = 1) {
+update_beta_sigma <- function(m_gamma, m2_beta, b_sigma, c = 1) {
   c * (sum(m_gamma * m2_beta) / 2 + b_sigma)
 }
 

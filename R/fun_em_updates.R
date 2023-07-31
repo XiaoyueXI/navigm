@@ -4,27 +4,27 @@
 
 #############
 
-
+#' @importFrom stats pnorm dnorm
 get_P1 <- function(Omega, Alpha, tau1,  v0, v1, c = 1) {
 
   logdens0 <-
     c * (
-      dnorm(
+      stats::dnorm(
         Omega,
         mean = 0,
         sd = v0 / sqrt(tau1),
         log = TRUE
-      ) + pnorm(Alpha, log.p = TRUE, lower.tail = FALSE)
+      ) + stats::pnorm(Alpha, log.p = TRUE, lower.tail = FALSE)
     )
 
   logdens1 <-
     c * (
-      dnorm(
+      stats::dnorm(
         Omega,
         mean = 0,
         sd = v1 / sqrt(tau1),
         log = TRUE
-      ) + pnorm(Alpha, log.p = TRUE, lower.tail = TRUE)
+      ) + stats::pnorm(Alpha, log.p = TRUE, lower.tail = TRUE)
     )
 
   # for numerical stability. = dens1 / (dens0 + dens1)
@@ -38,19 +38,20 @@ get_P1 <- function(Omega, Alpha, tau1,  v0, v1, c = 1) {
 }
 
 
+#' @importFrom stats dnorm
 get_P2 <- function(beta, o, tau2, s0, s1, c = 1) {
 
   eps <- .Machine$double.eps
 
   logdens0 <-
-    c * (dnorm(
+    c * (stats::dnorm(
       beta,
       mean = 0,
       sd = s0 / sqrt(tau2),
       log = TRUE
     ) + log(1 - o + eps))
   logdens1 <-
-    c * (dnorm(
+    c * (stats::dnorm(
       beta,
       mean = 0,
       sd = s1 / sqrt(tau2),
