@@ -91,27 +91,39 @@ gmn_em_core <-  function(Y,
   list_hyper <- set_default(list_hyper, 't02', 0.5)
   if(list_hyper$t02 <= 0)stop("t02 must be positive.")
 
+  # list2env(list_hyper, envir = .GlobalEnv)
+  #
+  lambda <- list_hyper$lambda
+  v0 <- list_hyper$v0
+  v1 <- list_hyper$v1
+  a_tau <- list_hyper$a_tau
+  b_tau <- list_hyper$b_tau
+  a_sigma <- list_hyper$a_sigma
+  b_sigma <- list_hyper$b_sigma
+  n0 <- list_hyper$n0
+  t02 <- list_hyper$t02
+  #
+
   if (verbose) cat("... done. == \n\n")
 
   if (verbose) cat("== Preparing the parameter initialisation ... \n\n")
 
   # Specify initial parameters unless provided
   #
-  list2env(list_hyper, envir = .GlobalEnv)
-  if(!is.null(list_init))list2env(list_init, envir = .GlobalEnv)
+  # if(!is.null(list_init))list2env(list_init, envir = .GlobalEnv)
 
   if (!'Omega' %in% names(list_init) | ('Omega' %in% names(list_init) & is.null(list_init$Omega))) {
 
     Sigma <- (S + v0 * diag(P)) / N
-    Omega <- as.matrix(Matrix::nearPD(solve(Sigma))$mat)
+    list_init$Omega <- as.matrix(Matrix::nearPD(solve(Sigma))$mat)
 
   }else{
 
-    if(nrow(Omega)!=ncol(Omega)){
+    if(nrow(list_init$Omega)!=ncol(list_init$Omega)){
       stop("Omega should be initialised as a square matrix")
-    }else if(matrixcalc::is.symmetric.matrix(Omega)){
+    }else if(matrixcalc::is.symmetric.matrix(list_init$Omega)){
       stop("Omega should be initialised as a symmetric matrix")
-    }else if(matrixcalc::is.positive.definite(Omega)){
+    }else if(matrixcalc::is.positive.definite(list_init$Omega)){
       stop("Omega should be initialised as a positive definite matrix")
     }
 
@@ -119,11 +131,11 @@ gmn_em_core <-  function(Y,
 
   if (!'beta' %in% names(list_init) | ('beta' %in% names(list_init) & is.null(list_init$beta))) {
 
-    beta <- rep(0, Q)
+    list_init$beta <- rep(0, Q)
 
   }else{
 
-    if(length(beta) != ncol(V)){
+    if(length(list_init$beta) != ncol(V)){
       stop("Length of beta does not match the number of columns in V.")
     }
 
@@ -131,17 +143,17 @@ gmn_em_core <-  function(Y,
 
   if (!'zeta' %in% names(list_init) | ('zeta' %in% names(list_init) & is.null(list_init$zeta))) {
 
-    zeta <- list_hyper$n0
+    list_init$zeta <- list_hyper$n0
 
   }
 
   if (!'tau1' %in% names(list_init) | ('tau1' %in% names(list_init) & is.null(list_init$tau1))) {
 
-    tau1 <- 1
+    list_init$tau1 <- 1
 
   }else{
 
-    if( tau1 <= 0){
+    if(list_init$tau1 <= 0){
       stop("tau1 must be positive.")
     }
 
@@ -149,15 +161,24 @@ gmn_em_core <-  function(Y,
 
   if (!'tau2' %in% names(list_init) | ('tau2' %in% names(list_init) & is.null(list_init$tau2))) {
 
-    tau2 <- 1
+    list_init$tau2 <- 1
 
   }else{
 
-    if( tau2 <= 0){
+    if( list_init$tau2 <= 0){
       stop("tau2 must be positive.")
     }
 
   }
+
+
+  #
+  Omega <- list_init$Omega
+  beta <- list_init$beta
+  zeta <- list_init$zeta
+  tau1 <- list_init$tau1
+  tau2 <- list_init$tau2
+  #
 
   if (verbose) cat("... done. == \n\n")
 

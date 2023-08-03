@@ -197,6 +197,7 @@ navigm <- function(Y, V =NULL,
                    ifelse(method =='GMSS' & inference == 'EM',paste0("and s0 = ", paste(list_hyper$s0_v, collapse = ' '), '\n') , ""),
                    "on ",numCores," cores ... \n\n")
 
+  s0 <- v0 <- NULL
   # keep all the checks & steps inside navigm_core
   # to make it work standalone
   #
@@ -274,14 +275,12 @@ navigm <- function(Y, V =NULL,
 
     if(!(method =='GMSS' & inference == 'EM')){
       vec_criterion <- sapply(out, function(x){EBIC_GSS(x$estimates,
-                                                        N = nrow(x$args$Y),
-                                                        P = ncol(x$args$Y))})
+                                                        N = nrow(x$args$Y))})
     }else{
       vec_criterion <- do.call('rbind',lapply(out, function(x){
         sapply(x, function(y){
           EBIC_GSS(y$estimates,
-                   N = nrow(y$args$Y),
-                   P = ncol(x$args$Y))
+                   N = nrow(y$args$Y))
         })
       }))
     }

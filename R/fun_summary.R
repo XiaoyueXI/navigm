@@ -72,17 +72,17 @@ BIC_GSS <- function(estimates, N){
 #' Positive gamma leads to stronger penalization of large graphs.
 #' https://arxiv.org/pdf/1011.6640.pdf shows \code{gamma=0.5} achieves a good compromise between positive selection rates and false discovery rates.
 #' @param N number of samples (number of rows in Y).
-#' @param P number of nodes (number of columns in Y).
 #'
 #' @return Scalar. Extended Bayesian information criterion of a spike-and-slab Gaussian graphical model on N-sample data Y.
 #'
 #'
 #' @export
-EBIC_GSS <- function(estimates, gamma =0.5, N, P){
+EBIC_GSS <- function(estimates, gamma =0.5, N){
 
   Omega <- estimates$Omega
   Omega[estimates$m_delta <= 0.5] <- 0
   diag(Omega) <- diag(estimates$Omega)
+  P <- nrow(Omega)
 
   sum(diag(estimates$S %*% Omega)) -
     N * determinant(Omega, logarithm = TRUE)$modulus[1] +

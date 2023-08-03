@@ -4,3 +4,5 @@
 ^~/navigm$
 ^vignettes$
 ^vignettes/navigm\.Rmd$
+^.*\.Rproj$
+^\.Rproj\.user$

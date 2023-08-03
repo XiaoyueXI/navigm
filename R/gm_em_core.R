@@ -110,27 +110,42 @@ gm_em_core <-  function(Y,
 
   }
 
+  # list2env(list_hyper, envir = .GlobalEnv)
+  #
+  lambda <- list_hyper$lambda
+  v0 <- list_hyper$v0
+  v1 <- list_hyper$v1
+  if(version == 1){
+    a_rho <- list_hyper$a_rho
+    b_rho <- list_hyper$b_rho
+  }else if(version == 2){
+    n0 <- list_hyper$n0
+    t02 <- list_hyper$t02
+  }
+  a_tau <- list_hyper$a_tau
+  b_tau <- list_hyper$b_tau
+  #
+
   if (verbose) cat("... done. == \n\n")
 
   if (verbose) cat("== Preparing the parameter initialisation ... \n\n")
 
   # Specify initial parameters unless provided
   #
-  list2env(list_hyper, envir = .GlobalEnv)
-  if(!is.null(list_init))list2env(list_init, envir = .GlobalEnv)
+  # if(!is.null(list_init))list2env(list_init, envir = .GlobalEnv)
 
   if (!'Omega' %in% names(list_init) | ('Omega' %in% names(list_init) & is.null(list_init$Omega))) {
 
     Sigma <- (S + v0 * diag(P)) / N
-    Omega <- as.matrix(Matrix::nearPD(solve(Sigma))$mat)
+    list_init$Omega <- as.matrix(Matrix::nearPD(solve(Sigma))$mat)
 
   }else{
 
-    if(nrow(Omega)!=ncol(Omega)){
+    if(nrow(list_init$Omega)!=ncol(list_init$Omega)){
       stop("Omega should be initialised as a square matrix")
-    }else if(matrixcalc::is.symmetric.matrix(Omega)){
+    }else if(matrixcalc::is.symmetric.matrix(list_init$Omega)){
       stop("Omega should be initialised as a symmetric matrix")
-    }else if(matrixcalc::is.positive.definite(Omega)){
+    }else if(matrixcalc::is.positive.definite(list_init$Omega)){
       stop("Omega should be initialised as a positive definite matrix")
     }
 
@@ -140,11 +155,11 @@ gm_em_core <-  function(Y,
 
     if (!'rho' %in% names(list_init) | ('rho' %in% names(list_init) & is.null(list_init$rho))) {
 
-      rho <- 1 / P
+      list_init$rho <- 1 / P
 
     }else{
 
-      if( rho < 0 | rho > 1){
+      if( list_init$rho < 0 | list_init$rho > 1){
         stop("rho must be in [0,1].")
       }
 
@@ -154,23 +169,34 @@ gm_em_core <-  function(Y,
 
     if (!'zeta' %in% names(list_init) | ('zeta' %in% names(list_init) & is.null(list_init$zeta))) {
 
-      zeta <- list_hyper$n0
+      list_init$zeta <- list_hyper$n0
 
     }
   }
 
   if (!'tau1' %in% names(list_init) | ('tau1' %in% names(list_init) & is.null(list_init$tau1))) {
 
-    tau1 <- 1
+    list_init$tau1 <- 1
 
   }else{
 
-    if( tau1 <= 0){
+    if( list_init$tau1 <= 0){
       stop("tau1 must be positive.")
     }
 
   }
 
+
+  #
+  Omega <- list_init$Omega
+  if(version == 1){
+    rho <- list_init$rho
+  }else if(version == 2){
+    zeta <-  list_init$zeta
+  }
+  zeta <- list_init$zeta
+  tau1 <- list_init$tau1
+  #
 
   if (verbose) cat("... done. == \n\n")
 

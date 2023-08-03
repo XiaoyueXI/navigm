@@ -189,7 +189,7 @@ print(compute_perf(gmss_vbem$estimates$m_delta[upper.tri(net$A)], net$A[upper.tr
 print(compute_perf(gmss_vbem$estimates$m_gamma, beta_true_gmss!=0))
 ```
   
-These two outputs are subject to the threshold choices. The threshold is specified to 0.5 in this example. Alternatively, a [false discovery rate derived threshold](https://projecteuclid.org/journals/annals-of-applied-statistics/volume-14/issue-2/A-global-local-approach-for-detecting-hotspots-in-multiple-response/10.1214/20-AOAS1332.full) may be employed.   
+These two outputs are subject to the threshold choices. The threshold is specified to 0.5 in this example. Alternatively, a [false discovery rate derived threshold](https://pubmed.ncbi.nlm.nih.gov/15054023/) may be employed.   
 
 # Simpler models
 The package allows for the following simpler models:

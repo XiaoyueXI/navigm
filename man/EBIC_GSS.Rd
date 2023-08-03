@@ -4,7 +4,7 @@
 \alias{EBIC_GSS}
 \title{Evaluate the extended Bayesian information criterion (BIC) for spike-and-slab Gaussian graphical models.}
 \usage{
-EBIC_GSS(estimates, gamma = 0.5, N, P)
+EBIC_GSS(estimates, gamma = 0.5, N)
 }
 \arguments{
 \item{estimates}{A list of parameter estimates using the \code{navigm} function,
@@ -16,8 +16,6 @@ Positive gamma leads to stronger penalization of large graphs.
 https://arxiv.org/pdf/1011.6640.pdf shows \code{gamma=0.5} achieves a good compromise between positive selection rates and false discovery rates.}
 
 \item{N}{number of samples (number of rows in Y).}
-
-\item{P}{number of nodes (number of columns in Y).}
 }
 \value{
 Scalar. Extended Bayesian information criterion of a spike-and-slab Gaussian graphical model on N-sample data Y.

@@ -108,27 +108,42 @@ gm_vbem_core  <- function(Y,
 
   }
 
+  # list2env(list_hyper, envir = .GlobalEnv)
+  lambda <- list_hyper$lambda
+  v0 <- list_hyper$v0
+  v1 <- list_hyper$v1
+  a_tau <- list_hyper$a_tau
+  b_tau <- list_hyper$b_tau
+  if(version == 1){
+    a_rho <- list_hyper$a_rho
+    b_rho <- list_hyper$b_rho
+  }else if(version == 2){
+    n0 <- list_hyper$n0
+    t02 <- list_hyper$t02
+  }
+  #
+
+  #
   if (verbose) cat("... done. == \n\n")
 
   if (verbose) cat("== Preparing the parameter initialisation ... \n\n")
 
   # Specify initial parameters unless provided
   #
-  list2env(list_hyper, envir = .GlobalEnv)
-  if(!is.null(list_init))list2env(list_init, envir = .GlobalEnv)
+  # if(!is.null(list_init))list2env(list_init, envir = .GlobalEnv)
 
   if (!'Omega' %in% names(list_init) | ('Omega' %in% names(list_init) & is.null(list_init$Omega))) {
 
     Sigma <- (S + v0 * diag(P)) / N
-    Omega <- as.matrix(Matrix::nearPD(solve(Sigma))$mat)
+    list_init$Omega <- as.matrix(Matrix::nearPD(solve(Sigma))$mat)
 
   }else{
 
-    if(nrow(Omega)!=ncol(Omega)){
+    if(nrow(list_init$Omega)!=ncol(list_init$Omega)){
       stop("Omega should be initialised as a square matrix")
-    }else if(matrixcalc::is.symmetric.matrix(Omega)){
+    }else if(matrixcalc::is.symmetric.matrix(list_init$Omega)){
       stop("Omega should be initialised as a symmetric matrix")
-    }else if(matrixcalc::is.positive.definite(Omega)){
+    }else if(matrixcalc::is.positive.definite(list_init$Omega)){
       stop("Omega should be initialised as a positive definite matrix")
     }
 
@@ -137,11 +152,11 @@ gm_vbem_core  <- function(Y,
   if(version == 1){
     if (!'alpha_rho' %in% names(list_init) | ('alpha_rho' %in% names(list_init) & is.null(list_init$alpha_rho))) {
 
-      alpha_rho <- 1
+      list_init$alpha_rho <- 1
 
     }else{
 
-      if( alpha_rho <= 0){
+      if( list_init$alpha_rho <= 0){
         stop("alpha_rho must be positive.")
       }
 
@@ -149,11 +164,11 @@ gm_vbem_core  <- function(Y,
 
     if (!'beta_rho' %in% names(list_init) | ('beta_rho' %in% names(list_init) & is.null(list_init$beta_rho))) {
 
-      beta_rho <- 1
+      list_init$beta_rho <- 1
 
     }else{
 
-      if( beta_rho <= 0){
+      if( list_init$beta_rho <= 0){
         stop("beta_rho must be positive.")
       }
 
@@ -162,17 +177,17 @@ gm_vbem_core  <- function(Y,
 
     if (!'mu_zeta' %in% names(list_init) | ('mu_zeta' %in% names(list_init) & is.null(list_init$mu_zeta))) {
 
-      mu_zeta <- list_hyper$n0
+      list_init$mu_zeta <- list_hyper$n0
 
     }
 
     if (!'sig2_inv_zeta' %in% names(list_init) | ('sig2_inv_zeta' %in% names(list_init) & is.null(list_init$sig2_inv_zeta))) {
 
-      sig2_inv_zeta <- 1/list_hyper$t02
+      list_init$sig2_inv_zeta <- 1/list_hyper$t02
 
     }else{
 
-      if( sig2_inv_zeta <= 0){
+      if( list_init$sig2_inv_zeta <= 0){
         stop("sig2_inv_zeta must be positive.")
       }
 
@@ -181,11 +196,11 @@ gm_vbem_core  <- function(Y,
 
   if (!'alpha_tau' %in% names(list_init) | ('alpha_tau' %in% names(list_init) & is.null(list_init$alpha_tau))) {
 
-    alpha_tau <- 1
+    list_init$alpha_tau <- 1
 
   }else{
 
-    if( alpha_tau <= 0){
+    if( list_init$alpha_tau <= 0){
       stop("alpha_tau must be positive.")
     }
 
@@ -193,15 +208,30 @@ gm_vbem_core  <- function(Y,
 
   if (!'beta_tau' %in% names(list_init) | ('beta_tau' %in% names(list_init) & is.null(list_init$beta_tau))) {
 
-    beta_tau <- 1
+    list_init$beta_tau <- 1
 
   }else{
 
-    if( beta_tau <= 0){
+    if( list_init$beta_tau <= 0){
       stop("beta_tau must be positive.")
     }
 
   }
+
+
+  #
+  Omega <- list_init$Omega
+  alpha_tau <- list_init$alpha_tau
+  beta_tau <- list_init$beta_tau
+
+  if(version == 1 ){
+    alpha_rho <- list_init$alpha_rho
+    beta_rho <- list_init$beta_rho
+  }else if(version == 2){
+    mu_zeta <- list_init$mu_zeta
+    sig2_inv_zeta <- list_init$sig2_inv_zeta
+  }
+  #
 
 
   # Initialise deduced quantities
