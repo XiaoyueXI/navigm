@@ -19,7 +19,7 @@ generate_V(
 
 \item{Q}{Scalar. Number of node-level auxiliary variables.}
 
-\item{alpha, beta}{Scalars. Shape parameters of beta distribution.}
+\item{alpha, beta}{Scalars. Shape parameters of beta distribution with default 0.05 and 0.2.}
 
 \item{Sigma}{A correlation matrix of auxiliary variables.}
 
@@ -28,5 +28,5 @@ generate_V(
 \item{verbose}{Logical. If FALSE (default), not show messages; otherwise, show the messages.}
 }
 \description{
-This function simulates auxiliary variable matrices in order to assess the package.
+This function simulates auxiliary variable matrices that mimic the PPIs in a Bayesian spike-and-slab regression.
 }

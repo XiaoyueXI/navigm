@@ -13,7 +13,6 @@ gmn_em_core <-  function(Y,
                          tol = 1e-1,
                          maxit = 1e3,
                          verbose = T,
-                         track_ELBO = F,
                          debug = F) {
 
   # Disabled options
@@ -45,7 +44,6 @@ gmn_em_core <-  function(Y,
       tol = tol,
       maxit = maxit,
       verbose = verbose,
-      track_ELBO = track_ELBO,
       debug = debug
     )
 
@@ -171,7 +169,6 @@ gmn_em_core <-  function(Y,
 
   }
 
-
   #
   Omega <- list_init$Omega
   beta <- list_init$beta
@@ -182,28 +179,16 @@ gmn_em_core <-  function(Y,
 
   if (verbose) cat("... done. == \n\n")
 
-  # track ELBO
-  #
-  if (track_ELBO) {
-
-    vec_ELBO_M <- c()
-
-  } else{
-
-    vec_ELBO_M <- NA
-
-  }
-
   # debug mode
   #
   if (debug) {
 
     # record number of warnings
     n_warning <- 0
+    # track elbo
+    vec_ELBO_M <- c()
 
   }
-
-
 
   # Pre-compute
   #
@@ -285,20 +270,6 @@ gmn_em_core <-  function(Y,
     tau1 <- get_tau1(Omega, E1, a_tau, b_tau, P)
     tau2 <- get_tau2_gmn(beta, a_sigma, b_sigma, Q)
     zeta <- get_zeta(E2, theta, n0, t02, P)
-
-    print(beta)
-
-    print(sapply(sV, function(x)
-      sum(x[upper.tri(x, diag = T)] * E2[upper.tri(E2)])) -
-        (P - 1) *  zeta * apply(V, 2, sum) -
-        (P - 1) *  sapply(1:Q, function(x)
-          sum(spV1[[x]] * beta[-x])) -
-        sapply(1:Q, function(x)
-          sum(spV2[[x]] * beta[-x])))
-
-    print ((P - 1) *  apply(V ^ 2, 2, sum) + 2 * sapply(pV, function(x)
-      sum(x[upper.tri(x, diag = T)])) + tau2)
-
     beta <- get_beta_gmn(beta,
                          zeta,
                          tau2,
@@ -311,7 +282,6 @@ gmn_em_core <-  function(Y,
                          P,
                          Q)
 
-    # print(beta)
 
     # omega
     #
@@ -376,7 +346,7 @@ gmn_em_core <-  function(Y,
 
       ELBO_old <- ELBO
 
-      if (track_ELBO) {
+      if (debug) {
         vec_ELBO_M <- c(vec_ELBO_M, ELBO)
       }
     }
@@ -410,7 +380,8 @@ gmn_em_core <-  function(Y,
 
 
   if(debug){
-    debugs <- list( n_warning = n_warning )
+    debugs <- list( n_warning = n_warning,
+                    vec_ELBO_M = vec_ELBO_M)
   }else{
     debugs <- NA
   }
@@ -421,7 +392,6 @@ gmn_em_core <-  function(Y,
     estimates,
     debugs,
     it,
-    vec_ELBO_M,
     pt
   )
 

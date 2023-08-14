@@ -2,7 +2,7 @@
 % Please edit documentation in R/fun_summary.R
 \name{compute_pauc}
 \alias{compute_pauc}
-\title{Compute standardised partial area under the ROC curve.}
+\title{Compute standardised area under the truncated ROC curve.}
 \usage{
 compute_pauc(ppi, pat, fpr_stop = 1, standardise = F)
 }
@@ -13,12 +13,12 @@ compute_pauc(ppi, pat, fpr_stop = 1, standardise = F)
 
 \item{fpr_stop}{Scalar. False positive rate at which the ROC curve is truncated.}
 
-\item{standardise}{Logical. If FALSE (default), not standardise the partial AUC; otherwise, standardise.}
+\item{standardise}{Logical. If FALSE (default), not apply the standardisation; otherwise, apply.}
 }
 \value{
 A scalar measuring the classification performance.
 }
 \description{
 This function compute the area under the ROC curve (AUC) truncated at
-the false positive rate \code{fpr_stop}. AUC is a threshold-free performance measure.
+the false positive rate \code{fpr_stop}. The AUC is a threshold-free performance measure.
 }

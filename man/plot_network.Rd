@@ -4,17 +4,19 @@
 \alias{plot_network}
 \title{Plot network.}
 \usage{
-plot_network(x, cex = 0.5, node_names = NULL, ...)
+plot_network(x, cex = 0.5, node_names = NULL, vertex.color = "yellow", ...)
 }
 \arguments{
 \item{x}{A adjacency matrix.}
 
 \item{cex}{Scalar. The amount by which vertex label sizes should be magnified relative to the default.}
 
-\item{node_names}{A vector of same length as the number of rows & columns of \code{x} and containing vertex names.}
+\item{node_names}{A vector of same length as the number of rows & columns of \code{x} contains vertex names.}
+
+\item{vertex.color}{Character. Color of vertices, e.g. \code{vertex.color = "yellow"}  (default).}
 
 \item{...}{other plotting arguments. Full details see \code{igraph::plot}.}
 }
 \description{
-This function plots the undirected and unweighted networks based on an adjacency matrix (typically useful when the network is small).
+This function plots the undirected and unweighted networks based on an adjacency matrix (applicable to small networks).
 }

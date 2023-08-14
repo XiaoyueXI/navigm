@@ -26,7 +26,7 @@ get_Alpha <- function(theta, zeta, p) {
 inv_mills_ratio_ <- function(delta, U, log_1_pnorm_U, log_pnorm_U) {
   stopifnot(delta %in% c(0, 1))
 
-  # writing explicitely the formula for pnorm(, log = TRUE) is faster...
+  # writing explicitly the formula for pnorm(, log = TRUE) is faster...
   if (delta == 1) {
     m <- exp(-U ^ 2 / 2 - log(sqrt(2 * pi)) - log_pnorm_U)
 
@@ -237,15 +237,13 @@ get_mu <- function(E_p_t, s2, p) {
 get_n0_t02 <- function(p, p_star) {
 
   E_p_t <- p_star[1]
-  V_p_t <- min(p_star[2], floor(2 * p / 3))
+  # V_p_t <- min(p_star[2], floor(2 * p / 3))
+  V_p_t <- p_star[2]
 
   dn <- 1e-6
   up <- 1e5
 
-  # Get n0 and t02 similarly as for a_omega_t and b_omega_t in HESS
-  # (specify expectation and variance of number of active predictors per response)
-  #
-  # Look at : gam_st | theta_s = 0
+  # Get n0 and t02
   #
   tryCatch(t02 <- stats::uniroot(function(x)
     get_V_p_t(get_mu(E_p_t, x, p), x, p) - V_p_t,
@@ -256,7 +254,7 @@ get_n0_t02 <- function(p, p_star) {
                   "Please change their values."))
     })
 
-  # n0 sets the level of sparsity.
+  #
   n0 <- get_mu(E_p_t, t02, p)
 
   create_named_list_(n0, t02)
@@ -265,14 +263,23 @@ get_n0_t02 <- function(p, p_star) {
 
 #' Simulate precision matrices and data given an adjacency matrix.
 #'
-#' This function simulates precision matrices and the observations based on pre-specified adjacency matrix, inspired by Learning Graphical Models With Hubs, JMLR, 2014, P.3307.
+#' This function simulates precision matrices and the observations based on
+#' the pre-specified adjacency matrix,
+#' inspired by Learning Graphical Models With Hubs, JMLR, 2014, P.3307.
 #'
 #' @param N Scalar. Number of observations.
 #' @param A An adjacency matrix.
 #' @param vec_magnitude A vector of two positive numbers indicating the range of absolute magnitudes of precision matrix entries.
 #' @param bool_scale Logical. If TRUE (default), scale the samples; otherwise, not scale.
 #'
-#' @return Input adjacency matrix \code{A}, simulated precision matrix \code{Omega}, observations \code{Y}.
+#'
+#' @return A list containing the simulated data:
+#'  \describe{
+#'  \item{A} the input adjacency matrix.
+#'  \item{Omega} the simulated adjacency matrix of same size and structure of the pre-specified adjacency matrix.
+#'  \item{Y} the simulated observations with N rows and \code{ncol(A)} columns.
+#'}
+#'
 #' @importFrom mvtnorm rmvnorm
 #' @importFrom stats runif
 #' @export
@@ -319,11 +326,11 @@ generate_data_from_adjancency <- function(N,
 
 #' Simulate beta distributed auxiliary variables.
 #'
-#' This function simulates auxiliary variable matrices in order to assess the package.
+#' This function simulates auxiliary variable matrices that mimic the PPIs in a Bayesian spike-and-slab regression.
 #'
 #' @param P Scalar. Number of nodes in the graph.
 #' @param Q Scalar. Number of node-level auxiliary variables.
-#' @param alpha,beta Scalars. Shape parameters of beta distribution.
+#' @param alpha,beta Scalars. Shape parameters of beta distribution with default 0.05 and 0.2.
 #' @param Sigma A correlation matrix of auxiliary variables.
 #' @param min_gene Scalar. Number of influential entries per auxiliary variable.
 #' @param verbose Logical. If FALSE (default), not show messages; otherwise, show the messages.

@@ -651,7 +651,7 @@ gmss_vbem_core  <- function(Y,
     ELBO_M_old <- ELBO_M
 
     if (track_ELBO) {
-      vec_ELBO_VBEM <- c(vec_ELBO_VBEM, ELBO_M)
+      vec_ELBO_M <- c(vec_ELBO_M, ELBO_M)
     }
   }
 

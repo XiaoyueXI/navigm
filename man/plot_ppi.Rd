@@ -2,7 +2,7 @@
 % Please edit documentation in R/fun_summary.R
 \name{plot_ppi}
 \alias{plot_ppi}
-\title{Plot variable-specific quantities.}
+\title{Plot variable-specific quantities such as effect sizes and PPIs.}
 \usage{
 plot_ppi(
   ppi,
@@ -15,9 +15,9 @@ plot_ppi(
 )
 }
 \arguments{
-\item{ppi}{A vector of the variable-specific quantity.}
+\item{ppi}{A vector of the variable-specific quantities.}
 
-\item{ppi_names}{A vector of variable indices. If \code{NULL} (default), use the numbered indices.}
+\item{ppi_names}{A vector of variable names. If \code{NULL} (default), use the variable indices.}
 
 \item{col}{A character indicating the point color or a vector of the same length of variables.}
 

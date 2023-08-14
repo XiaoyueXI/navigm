@@ -6,3 +6,5 @@
 ^vignettes/navigm\.Rmd$
 ^.*\.Rproj$
 ^\.Rproj\.user$
+^README.Rmd
+^LICENSE.md

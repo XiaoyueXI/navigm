@@ -9,7 +9,7 @@ BIC_GSS(estimates, N)
 \arguments{
 \item{estimates}{A list of parameter estimates using the \code{navigm} function,
 which includes precision matrix (Omega), edge posterior inclusion probability (m_delta)
-and data induced matrix S (=Y^T Y).}
+and a matrix S (=Y^T Y) evaluated based on data Y.}
 
 \item{N}{number of samples (number of rows in Y).}
 }

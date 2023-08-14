@@ -1,15 +1,3 @@
-# trunc_perf <-  function(perf, fpr.stop) { # perf = list with multiple entry per replication
-#
-#   for (iperf in seq_along(perf@x.values)){
-#     ind = which(perf@x.values[[iperf]] <= fpr.stop)
-#     perf@y.values[[iperf]] = perf@y.values[[iperf]][ind]
-#     perf@x.values[[iperf]] = perf@x.values[[iperf]][ind]
-#   }
-#
-#   perf
-#
-# }
-
 #' Evaluate the Akaike information criterion (AIC) for spike-and-slab Gaussian graphical models.
 #'
 #' This function evaluates one of the model selection criteria, Akaike information criterion,
@@ -17,7 +5,7 @@
 #'
 #' @param estimates A list of parameter estimates using the \code{navigm} function,
 #' which includes precision matrix (Omega), edge posterior inclusion probability (m_delta)
-#' and data induced matrix S (=Y^T Y).
+#' and a matrix S (=Y^T Y) evaluated based on data Y.
 #' @param N number of samples (number of rows in Y).
 #'
 #' @return Scalar. Akaike information criterion of a spike-and-slab Gaussian graphical model on N-sample data Y.
@@ -42,7 +30,7 @@ AIC_GSS <- function(estimates, N){
 #'
 #' @param estimates A list of parameter estimates using the \code{navigm} function,
 #' which includes precision matrix (Omega), edge posterior inclusion probability (m_delta)
-#' and data induced matrix S (=Y^T Y).
+#' and a matrix S (=Y^T Y) evaluated based on data Y.
 #' @param N number of samples (number of rows in Y).
 #'
 #' @return Scalar. Bayesian information criterion of a spike-and-slab Gaussian graphical model on N-sample data Y.
@@ -67,9 +55,9 @@ BIC_GSS <- function(estimates, N){
 #'
 #' @param estimates A list of parameter estimates using the \code{navigm} function,
 #' which includes precision matrix (Omega), edge posterior inclusion probability (m_delta)
-#' and data induced matrix S (=Y^T Y).
+#' and a matrix S (=Y^T Y) evaluated based on data Y.
 #' @param gamma EBIC parameter in [0,1] (default = 0.5). \code{gamma = 0} recovers BIC.
-#' Positive gamma leads to stronger penalization of large graphs.
+#' Positive gamma leads to stronger penalisation of large graphs.
 #' https://arxiv.org/pdf/1011.6640.pdf shows \code{gamma=0.5} achieves a good compromise between positive selection rates and false discovery rates.
 #' @param N number of samples (number of rows in Y).
 #'
@@ -82,6 +70,7 @@ EBIC_GSS <- function(estimates, gamma =0.5, N){
   Omega <- estimates$Omega
   Omega[estimates$m_delta <= 0.5] <- 0
   diag(Omega) <- diag(estimates$Omega)
+
   P <- nrow(Omega)
 
   sum(diag(estimates$S %*% Omega)) -
@@ -117,15 +106,15 @@ plot_roc <- function(ppi, pat, fpr_stop = 1, nci = 11, ...) {
 
 }
 
-#' Compute standardised partial area under the ROC curve.
+#' Compute standardised area under the truncated ROC curve.
 #'
 #' This function compute the area under the ROC curve (AUC) truncated at
-#' the false positive rate \code{fpr_stop}. AUC is a threshold-free performance measure.
+#' the false positive rate \code{fpr_stop}. The AUC is a threshold-free performance measure.
 #'
 #' @param ppi A vector of continuous prediction scores such as posterior inclusion probability or a list of such vectors.
 #' @param pat A vector of binary true outcomes or a list of such vectors.
 #' @param fpr_stop Scalar. False positive rate at which the ROC curve is truncated.
-#' @param standardise Logical. If FALSE (default), not standardise the partial AUC; otherwise, standardise.
+#' @param standardise Logical. If FALSE (default), not apply the standardisation; otherwise, apply.
 #'
 #' @return A scalar measuring the classification performance.
 
@@ -146,13 +135,13 @@ compute_pauc <- function(ppi, pat,  fpr_stop = 1, standardise = F) {
 
 }
 
-#' Plot variable-specific quantities.
+#' Plot variable-specific quantities such as effect sizes and PPIs.
 #'
 #' This function plots variable-specific quantity \code{ppi} against their indices \code{ppi_names},
 #' for instance posterior inclusion probabilities or effect sizes of auxiliary variables
 #'
-#' @param ppi A vector of the variable-specific quantity.
-#' @param ppi_names A vector of variable indices. If \code{NULL} (default), use the numbered indices.
+#' @param ppi A vector of the variable-specific quantities.
+#' @param ppi_names A vector of variable names. If \code{NULL} (default), use the variable indices.
 #' @param col A character indicating the point color or a vector of the same length of variables.
 #' @param condition A vector of logical. If satisfying \code{condition == T}, draw vertical lines from points to the x-axis.
 #' @param xlab Character. A title for the x axis.
@@ -206,17 +195,18 @@ compute_perf <- function(ppi, pat, threshold = 0.5){
 
 #' Plot network.
 #'
-#' This function plots the undirected and unweighted networks based on an adjacency matrix (typically useful when the network is small).
+#' This function plots the undirected and unweighted networks based on an adjacency matrix (applicable to small networks).
 #'
 #' @param x A adjacency matrix.
 #' @param cex Scalar. The amount by which vertex label sizes should be magnified relative to the default.
-#' @param node_names A vector of same length as the number of rows & columns of \code{x} and containing vertex names.
+#' @param node_names A vector of same length as the number of rows & columns of \code{x} contains vertex names.
+#' @param vertex.color Character. Color of vertices, e.g. \code{vertex.color = "yellow"}  (default).
 #' @param ... other plotting arguments. Full details see \code{igraph::plot}.
 #'
 #' @import igraph
 #'
 #' @export
-plot_network <- function(x, cex = 0.5, node_names = NULL, ...){
+plot_network <- function(x, cex = 0.5, node_names = NULL,vertex.color = "yellow" , ...){
 
   x <- x == 1
   diag(x) <- F
@@ -231,6 +221,8 @@ plot_network <- function(x, cex = 0.5, node_names = NULL, ...){
   g <- graph_from_adjacency_matrix(x, mode="undirected")
   lay <- layout_in_circle(g)
   V(g)$label.cex <- cex
-  pg <- plot(g, layout=lay, vertex.color="yellow", vertex.label = node_names, ...)
+  pg <- plot(g, layout=lay,
+             vertex.color=vertex.color,
+             vertex.label = node_names, ...)
 
 }

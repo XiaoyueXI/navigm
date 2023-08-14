@@ -62,11 +62,11 @@ update_mu_zeta_gm <-
 ####################
 
 update_alpha_sigma <- function(m_gamma, a_sigma, c = 1) {
-  c * (sum(m_gamma) / 2 + a_sigma -1) + 1
+  c * (effective_sum(m_gamma) / 2 + a_sigma -1) + 1
 }
 
 update_beta_sigma <- function(m_gamma, m2_beta, b_sigma, c = 1) {
-  c * (sum(m_gamma * m2_beta) / 2 + b_sigma)
+  c * (effective_sum(m_gamma * m2_beta) / 2 + b_sigma)
 }
 
 get_m_sig2_inv <- function(alpha_sigma, beta_sigma){
@@ -136,8 +136,8 @@ update_m_gamma <-
 
 ####################
 
-update_sig2_inv_beta <- function(m_sig2_inv, V, pV, p, c = 1) {
-  c *  (m_sig2_inv + (p - 1) * apply(V ^ 2, 2, sum) + 2 * sapply(pV, function(x)
+update_sig2_inv_beta <- function(m_sig2_inv, V, pV, P, c = 1) {
+  c *  (m_sig2_inv + (P - 1) * apply(V ^ 2, 2, sum) + 2 * sapply(pV, function(x)
     sum(x[upper.tri(x, diag = T)])))
 }
 
@@ -151,19 +151,19 @@ update_mu_beta <-
            sV,
            spV1,
            spV2,
-           p,
-           q,
+           P,
+           Q,
            c = 1) {
     bool_up <- upper.tri(E2)
     c * (
       sapply(sV, function(x) {
         sum(x[upper.tri(x, diag = T)] * E2[bool_up])
       }) -
-        (p - 1) * mu_zeta * apply(V, 2, sum) -
-        (p - 1) * sapply(1:q, function(j) {
+        (P - 1) * mu_zeta * apply(V, 2, sum) -
+        (P - 1) * sapply(1:Q, function(j) {
           sum(spV1[[j]] * m1_beta[-j])
         }) -
-        sapply(1:q, function(j) {
+        sapply(1:Q, function(j) {
           sum(spV2[[j]] * m1_beta[-j])
         })
     ) / sig2_inv_beta
@@ -185,18 +185,22 @@ get_m2_beta <- function(mu_beta, sig2_inv_beta, m_gamma) {
 ####################
 
 update_m_delta <- function(Omega, m_tau, m1_alpha, v0, v1, c=1) {
+
   1 / (1 + exp(
     c * log(v1 / v0) +
       c * m_tau * Omega ^ 2 * (1 / v1 ^ 2 - 1 / v0 ^ 2) / 2 +
       pnorm(sqrt(c) * m1_alpha, log.p = T, lower.tail = F) -
       pnorm(sqrt(c) * m1_alpha, log.p = T, lower.tail = T)
   ))
+
 }
 
-get_sum_var_alpha <- function(sig2_inv_zeta, m1_beta, m2_beta, V, pV, p){
-  p* (p-1)/2 * sig2_inv_zeta^(-1) +
-    (p-1) * sum(apply(V^2, 2, sum) * (m2_beta - m1_beta^2)) +
+get_sum_var_alpha <- function(sig2_inv_zeta, m1_beta, m2_beta, V, pV, P){
+
+  P * (P-1)/2 * sig2_inv_zeta^(-1) +
+    (P-1) * sum(apply(V^2, 2, sum) * (m2_beta - m1_beta^2)) +
     2 * sum(sapply(pV, sum) *( m2_beta - m1_beta^2))
+
 }
 
 #####################
@@ -206,8 +210,8 @@ get_sum_var_alpha <- function(sig2_inv_zeta, m1_beta, m2_beta, V, pV, p){
 #####################
 
 
-get_omega <- function(E1, S, Omega, lambda, n, p) {
-  for (j in 1:p) {
+get_omega <- function(E1, S, Omega, lambda, N, P) {
+  for (j in 1:P) {
     IOmega_nj_nj <-
       solve(Omega[-j, -j, drop = FALSE]) # implement update based on Sigma to avoid inverting here.
 
@@ -217,7 +221,7 @@ get_omega <- function(E1, S, Omega, lambda, n, p) {
       Omega[j, -j] <-
       -solve((s_j_j + lambda) * IOmega_nj_nj + diag(E1[-j, j]), S[-j, j])
     Omega[j, j] <-
-      Omega[j, -j, drop = FALSE] %*% IOmega_nj_nj %*% Omega[-j, j] + n / (lambda + s_j_j)
+      Omega[j, -j, drop = FALSE] %*% IOmega_nj_nj %*% Omega[-j, j] + N / (lambda + s_j_j)
 
   }
 
@@ -228,7 +232,7 @@ get_omega <- function(E1, S, Omega, lambda, n, p) {
 
 #######################################################
 
-## delta's updates in GM with beta prior on edge PIP ##
+## delta's updates in GM with beta prior on edge PIPs ##
 
 #######################################################
 
@@ -243,18 +247,20 @@ update_m_delta_betap <- function(Omega, m_tau, m_log_rho, m_log_one_minus_rho, v
 
 }
 
-####################
+######################################################
 
-## rho's updates ##
+## rho's updates in GM with beta prior on edge PIPs ##
 
-####################
+######################################################
 
 update_alpha_rho <- function(m_delta, a_rho, c = 1){
-  c * (sum(m_delta[upper.tri(m_delta)]) + a_rho - 1) + 1
+  c * (effective_sum(m_delta[upper.tri(m_delta)]) + a_rho - 1) + 1
+  # c * (sum(m_delta[upper.tri(m_delta)]) + a_rho - 1) + 1
 }
 
 update_beta_rho <- function(m_delta, b_rho, c = 1){
-  c * (sum(1 - m_delta[upper.tri(m_delta)]) + b_rho - 1) + 1
+  c * (effective_sum(1 - m_delta[upper.tri(m_delta)]) + b_rho - 1) + 1
+  # c * (sum(1 - m_delta[upper.tri(m_delta)]) + b_rho - 1) + 1
 }
 
 

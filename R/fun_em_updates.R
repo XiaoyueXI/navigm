@@ -114,7 +114,7 @@ get_E5 <- function(P2, s0, s1) {
 
 get_o <- function(P2, a_o, b_o) {
 
-  (sum(P2) + a_o - 1) / (length(P2) + a_o + b_o - 2)
+  (effective_sum(P2) + a_o - 1) / (length(P2) + a_o + b_o - 2)
 
 }
 
@@ -216,7 +216,7 @@ get_beta_gmn <- function(beta,
 get_rho <- function(P1, a_rho, b_rho) {
 
   bool_up <- upper.tri(P1)
-  (sum(P1[bool_up]) + a_rho - 1) / (sum(bool_up) + a_rho + b_rho - 2)
+  (effective_sum(P1[bool_up]) + a_rho - 1) / (sum(bool_up) + a_rho + b_rho - 2)
 
 }
 

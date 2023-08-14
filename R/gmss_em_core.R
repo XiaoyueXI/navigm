@@ -13,7 +13,6 @@ gmss_em_core <-  function(Y,
                           tol = 1e-1,
                           maxit = 1e3,
                           verbose = T,
-                          track_ELBO = F,
                           debug = F) {
 
 
@@ -46,7 +45,6 @@ gmss_em_core <-  function(Y,
       tol = tol,
       maxit = maxit,
       verbose = verbose,
-      track_ELBO = track_ELBO,
       debug = debug
     )
 
@@ -214,24 +212,14 @@ gmss_em_core <-  function(Y,
 
   if (verbose) cat("... done. == \n\n")
 
-  # track ELBO
-  #
-  if (track_ELBO) {
-
-    vec_ELBO_M <- c()
-
-  } else{
-
-    vec_ELBO_M <- NA
-
-  }
-
   # debug mode
   #
   if (debug) {
 
     # record number of warnings
     n_warning <- 0
+    # track elbo
+    vec_ELBO_M <- c()
 
   }
 
@@ -330,9 +318,9 @@ gmss_em_core <-  function(Y,
 
     # omega
     #
-    bool_cpp <- F
-    bool_direct_solve <- F # keep F as otherwise Omega inverted at each iteration
-
+    # bool_cpp <- F
+    # bool_direct_solve <- F # keep F as otherwise Omega inverted at each iteration
+    #
     # if (bool_cpp) {
     #   if (bool_direct_solve) {
     #     out <- M_Omega_direct_solve(N, P, Omega, S, lambda, tau1 * E1)
@@ -398,7 +386,7 @@ gmss_em_core <-  function(Y,
 
       ELBO_old <- ELBO
 
-      if (track_ELBO) {
+      if (debug) {
         vec_ELBO_M <- c(vec_ELBO_M, ELBO)
       }
     }
@@ -436,7 +424,8 @@ gmss_em_core <-  function(Y,
 
 
   if(debug){
-    debugs <- list( n_warning = n_warning )
+    debugs <- list( n_warning = n_warning,
+                    vec_ELBO_M = vec_ELBO_M)
   }else{
     debugs <- NA
   }
@@ -447,7 +436,6 @@ gmss_em_core <-  function(Y,
     estimates,
     debugs,
     it,
-    vec_ELBO_M,
     pt
   )
 

@@ -31,14 +31,16 @@ get_elbo_gm_em_v1 <- function(Omega,
     #
     sum(S * Omega) / 2 -
     lambda * sum(diag(Omega)) / 2 -
-    sum(log(v1) * P1[bool_up] + log(v0) * (1 - P1[bool_up]))  +
+    log(v1) * effective_sum(P1[bool_up]) -
+    log(v0) * effective_sum(1 - P1[bool_up])  +
     #
     (P * (P - 1) / 2) * (log(tau1 + eps) / 2) -
     tau1 * sum(Omega[bool_up] ^ 2 * E1[bool_up]) / 2 +
     (a_tau - 1) * log(tau1 + eps) - b_tau * tau1 +
     #
-    sum(a_rho - 1 + P1[bool_up]) * log(rho + eps) +
-    sum(b_rho - P1[bool_up]) * log(1 - rho + eps)
+    (effective_sum(P1[bool_up]) + a_rho - 1) * log(rho + eps) +
+    (effective_sum(1 - P1[bool_up]) + b_rho - 1) * log(1 - rho + eps)
+
 }
 
 
@@ -78,7 +80,8 @@ get_elbo_gm_em_v2 <- function(Omega,
     #
     sum(S * Omega) / 2 -
     lambda * sum(diag(Omega)) / 2 -
-    sum(log(v1) * P1[bool_up] + log(v0) * (1 - P1[bool_up]))  +
+    log(v1) * effective_sum(P1[bool_up]) -
+    log(v0) * effective_sum(1 - P1[bool_up]) +
     #
     (P * (P - 1) / 2) * (log(tau1 + eps) / 2) -
     tau1 * sum(Omega[bool_up] ^ 2 * E1[bool_up]) / 2 +
@@ -132,7 +135,8 @@ get_elbo_gmn_em <- function(Omega,
     #
     sum(S * Omega) / 2 -
     lambda * sum(diag(Omega)) / 2 -
-    sum(log(v1) * P1[bool_up] + log(v0) * (1 - P1[bool_up]))  +
+    log(v1) *effective_sum(P1[bool_up]) -
+    log(v0) * effective_sum(1 - P1[bool_up])  +
     #
     (P * (P - 1) / 2) * (log(tau1 + eps) / 2) -
     tau1 * sum(Omega[bool_up] ^ 2 * E1[bool_up]) / 2 +
@@ -199,7 +203,8 @@ get_elbo_gmss_em <- function(Omega,
     #
     sum(S * Omega) / 2 -
     lambda * sum(diag(Omega)) / 2 -
-    sum(log(v1) * P1[bool_up] + log(v0) * (1 - P1[bool_up]))  +
+    log(v1) * effective_sum(P1[bool_up]) -
+    log(v0) * effective_sum(1 - P1[bool_up])  +
     #
     (P * (P - 1) / 2) * (log(tau1 + eps) / 2) -
     tau1 * sum(Omega[bool_up] ^ 2 * E1[bool_up]) / 2 +
@@ -211,13 +216,14 @@ get_elbo_gmss_em <- function(Omega,
     #
     ( zeta ^ 2 - 2 * n0 * zeta ) / ( 2 * t02 ) -
     #
-    sum(log(s1) * P2 + log(s0) * ( 1 - P2 ))  +
+    log(s1) * effective_sum(P2) -
+    log(s0) * effective_sum( 1 - P2 )  +
     #
     Q * log(tau2 + eps) / 2 -
     tau2 * sum( beta ^ 2 * E5 ) / 2 +
     #
-    (sum(P2) + a_o - 1) * log(o + eps) +
-    (sum(1 - P2) + b_o - 1) * log(1 - o + eps) +
+    (effective_sum(P2) + a_o - 1) * log(o + eps) +
+    (effective_sum(1 - P2) + b_o - 1) * log(1 - o + eps) +
     #
     (a_sigma - 1) * log(tau2 + eps) - b_sigma * tau2
 

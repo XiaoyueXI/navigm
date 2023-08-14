@@ -9,10 +9,10 @@ EBIC_GSS(estimates, gamma = 0.5, N)
 \arguments{
 \item{estimates}{A list of parameter estimates using the \code{navigm} function,
 which includes precision matrix (Omega), edge posterior inclusion probability (m_delta)
-and data induced matrix S (=Y^T Y).}
+and a matrix S (=Y^T Y) evaluated based on data Y.}
 
 \item{gamma}{EBIC parameter in [0,1] (default = 0.5). \code{gamma = 0} recovers BIC.
-Positive gamma leads to stronger penalization of large graphs.
+Positive gamma leads to stronger penalisation of large graphs.
 https://arxiv.org/pdf/1011.6640.pdf shows \code{gamma=0.5} achieves a good compromise between positive selection rates and false discovery rates.}
 
 \item{N}{number of samples (number of rows in Y).}

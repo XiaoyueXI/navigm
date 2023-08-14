@@ -45,10 +45,22 @@ Set $\zeta=-1.2$, and the probability of including the edge $(i,j)$ is given by 
 set.seed(123)
 
 #
-N <- 100
-P <- 20
-Q <- 10
-Q0 <- 1
+# if(T){
+#   N <- 200
+#   P <- 100
+#   Q <- 50
+#   Q0 <- 3
+#   zeta <-  - 1.5 
+# }
+# 
+# if(F){
+  N <- 100
+  P <- 20
+  Q <- 10
+  Q0 <- 1
+  zeta <-  - 1.2
+# }
+
 
 #
 V <- generate_V(P, Q)
@@ -62,7 +74,6 @@ beta_true_gmss[sample(1:Q, Q0)] <- beta_true
 
 #
 theta <- V %*% matrix(beta_true_gmss, ncol = 1)
-zeta <-  - 1.2
 pe <- matrix(theta, nrow = P, ncol = P)
 pe <- pe + t(pe) + zeta
 pe <- pnorm(pe)
@@ -158,22 +169,32 @@ In the left panel, one auxiliary variable is simulated as "active". Although all
 
 * Plot the truncated ROC curves (a threshold-free accuracy measure).
 
+
 ```{r plotrroc_gmssvbem,out.width='.7\\linewidth', fig.width=8, fig.height=3,fig.show='hold',fig.align='center'}
 par(mfrow = c(1,2))
 
-plot_roc(gmss_em$estimates$P1[upper.tri(net$A)], net$A[upper.tri(net$A)],col = 'black',fpr_stop = 0.1, main = 'edge selection')
-plot_roc(gmss_vbem$estimates$m_delta[upper.tri(net$A)], net$A[upper.tri(net$A)],col = 'red',fpr_stop = 0.1,add = T)
-  legend("bottomright", legend = c("EM","VBEM"),
-           lty = 1, cex = 0.7, col = c('black','red'))
+plot_roc(gmss_vbem$estimates$m_delta[upper.tri(net$A)], net$A[upper.tri(net$A)],main = 'edge selection')
   
-plot_roc(gmss_em$estimates$P2, beta_true_gmss!=0, col = 'black',fpr_stop = 0.1,main = 'variable selection')
-plot_roc(gmss_vbem$estimates$m_gamma, beta_true_gmss!=0,col = 'red',fpr_stop = 0.1, add = T)
-  legend("bottomright", legend = c("EM","VBEM"),
-           lty = 1, cex = 0.7, col = c('black','red'))
+
+plot_roc(gmss_vbem$estimates$m_gamma, beta_true_gmss!=0,main = 'variable selection')
   
 ```
 
-This shows superior performance of the VBEM in edge selection, and similar performance in node-level variable selection in this example. The very poor edge selection for the EM might be attributed to the boundary spike variance selected.
+<!-- ```{r plotrroc_gmssvbem,out.width='.7\\linewidth', fig.width=8, fig.height=3,fig.show='hold',fig.align='center'} -->
+<!-- par(mfrow = c(1,2)) -->
+
+<!-- plot_roc(gmss_em$estimates$P1[upper.tri(net$A)], net$A[upper.tri(net$A)],col = 'black',fpr_stop = 0.1, main = 'edge selection') -->
+<!-- plot_roc(gmss_vbem$estimates$m_delta[upper.tri(net$A)], net$A[upper.tri(net$A)],col = 'red',fpr_stop = 0.1,add = T) -->
+<!--   legend("bottomright", legend = c("EM","VBEM"), -->
+<!--            lty = 1, cex = 0.7, col = c('black','red')) -->
+
+<!-- plot_roc(gmss_em$estimates$P2, beta_true_gmss!=0, col = 'black',fpr_stop = 0.1,main = 'variable selection') -->
+<!-- plot_roc(gmss_vbem$estimates$m_gamma, beta_true_gmss!=0,col = 'red',fpr_stop = 0.1, add = T) -->
+<!--   legend("bottomright", legend = c("EM","VBEM"), -->
+<!--            lty = 1, cex = 0.7, col = c('black','red')) -->
+
+<!-- ``` -->
+<!-- This shows superior performance of the VBEM in edge selection, and similar performance in node-level variable selection in this example. The very poor edge selection for the EM might be attributed to the boundary spike variance selected. -->
 
 * Alternatively, the standardized area under the truncated ROC curve can be evaluated, for example, by  ``compute_pauc(gmss_vbem$estimates$m_delta[upper.tri(net$A)], net$A[upper.tri(net$A)], fpr_stop = 0.1, standardise = T)`` and this gives `r compute_pauc(gmss_vbem$estimates$m_delta[upper.tri(net$A)], net$A[upper.tri(net$A)], fpr_stop = 0.1, standardise = T)`.
 

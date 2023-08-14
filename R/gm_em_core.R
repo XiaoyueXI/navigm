@@ -11,9 +11,7 @@ gm_em_core <-  function(Y,
                         list_init = NULL,
                         tol = 1e-1,
                         maxit = 1e3,
-                        seed = 123,
                         verbose = T,
-                        track_ELBO = F,
                         debug = F,
                         version = 1) {
 
@@ -46,20 +44,19 @@ gm_em_core <-  function(Y,
       tol = tol,
       maxit = maxit,
       verbose = verbose,
-      track_ELBO = track_ELBO,
       debug = debug,
       version = version
     )
 
   if(is.null(version)){
 
-    warning('No versions are specified. Set to 1 by default.')
+    warning('No versions are specified. Set to 1 (a beta prior on edge inclusion) by default.')
     version <- 1
 
   }else{
 
     if (version!=1 & version!=2)
-      stop('version takes arguments 1 (a betag prior on edge inclusion) or 2 (a normal prior on probit edge inclusion)')
+      stop('version takes arguments 1 (a beta prior on edge inclusion) or 2 (a normal prior on probit edge inclusion). Other values are not allowed.')
 
   }
 
@@ -101,7 +98,7 @@ gm_em_core <-  function(Y,
     list_hyper <- set_default(list_hyper, 'b_rho', 2)
     if(list_hyper$b_rho <= 0)stop("b_rho must be positive.")
 
-  }else if (version == 2){
+  } else if (version == 2){
 
     list_hyper <- set_default(list_hyper, 'n0', -2)
 
@@ -200,24 +197,14 @@ gm_em_core <-  function(Y,
 
   if (verbose) cat("... done. == \n\n")
 
-  # track ELBO
-  #
-  if (track_ELBO) {
-
-    vec_ELBO_M <- c()
-
-  } else{
-
-    vec_ELBO_M <- NA
-
-  }
-
   # debug mode
   #
   if (debug) {
 
     # record number of warnings
     n_warning <- 0
+    # track elbo
+    vec_ELBO_M <- c()
 
   }
 
@@ -395,7 +382,7 @@ gm_em_core <-  function(Y,
 
       ELBO_old <- ELBO
 
-      if (track_ELBO) {
+      if (debug) {
         vec_ELBO_M <- c(vec_ELBO_M, ELBO)
       }
     }
@@ -422,7 +409,7 @@ gm_em_core <-  function(Y,
                       tau1 = tau1,
                       P1 = P1,
                       E1 = E1,
-                      S =S # for model comparison
+                      S = S # for model comparison
     )
 
   }else if(version == 2){
@@ -440,7 +427,8 @@ gm_em_core <-  function(Y,
 
 
   if(debug){
-    debugs <- list( n_warning )
+    debugs <- list( n_warning = n_warning,
+                    vec_ELBO_M = vec_ELBO_M)
   }else{
     debugs <- NA
   }
@@ -451,7 +439,6 @@ gm_em_core <-  function(Y,
     estimates,
     debugs,
     it,
-    vec_ELBO_M,
     pt
   )
 

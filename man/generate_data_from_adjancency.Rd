@@ -21,8 +21,15 @@ generate_data_from_adjancency(
 \item{bool_scale}{Logical. If TRUE (default), scale the samples; otherwise, not scale.}
 }
 \value{
-Input adjacency matrix \code{A}, simulated precision matrix \code{Omega}, observations \code{Y}.
+A list containing the simulated data:
+ \describe{
+ \item{A} the input adjacency matrix.
+ \item{Omega} the simulated adjacency matrix of same size and structure of the pre-specified adjacency matrix.
+ \item{Y} the simulated observations with N rows and \code{ncol(A)} columns.
+}
 }
 \description{
-This function simulates precision matrices and the observations based on pre-specified adjacency matrix, inspired by Learning Graphical Models With Hubs, JMLR, 2014, P.3307.
+This function simulates precision matrices and the observations based on
+the pre-specified adjacency matrix,
+inspired by Learning Graphical Models With Hubs, JMLR, 2014, P.3307.
 }

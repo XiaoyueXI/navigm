@@ -223,8 +223,8 @@ navigm_core <- function(Y, V =NULL,
               As no valid list_hyper and ne0 are provided, use default hyperparameters n0 = -2 and t02 = 0.5.')
 
     }else{
-
-      tmp <- get_n0_t02(ne0[1], ne0[2])
+      P <- ncol(Y)
+      tmp <- get_n0_t02(P*(P-1)/2, ne0)
       list_hyper$n0 <-  tmp$n0
       list_hyper$t02 <-  tmp$t02
 
