@@ -203,7 +203,7 @@ gm_em_core <-  function(Y,
 
     # record number of warnings
     n_warning <- 0
-    # track elbo
+    # track ELBO
     vec_ELBO_M <- c()
 
   }

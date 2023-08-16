@@ -11,7 +11,6 @@ gm_vbem_core  <- function(Y,
                           tol = 1e-1,
                           maxit = 1e3,
                           verbose = T,
-                          track_ELBO = F,
                           debug = F,
                           version = 1
 ) {
@@ -43,7 +42,6 @@ gm_vbem_core  <- function(Y,
       tol = tol,
       maxit = maxit,
       verbose = verbose,
-      track_ELBO = track_ELBO,
       debug = debug,
       version = version
     )
@@ -150,6 +148,7 @@ gm_vbem_core  <- function(Y,
   }
 
   if(version == 1){
+
     if (!'alpha_rho' %in% names(list_init) | ('alpha_rho' %in% names(list_init) & is.null(list_init$alpha_rho))) {
 
       list_init$alpha_rho <- 1
@@ -173,6 +172,7 @@ gm_vbem_core  <- function(Y,
       }
 
     }
+
   }else if(version == 2){
 
     if (!'mu_zeta' %in% names(list_init) | ('mu_zeta' %in% names(list_init) & is.null(list_init$mu_zeta))) {
@@ -192,6 +192,7 @@ gm_vbem_core  <- function(Y,
       }
 
     }
+
   }
 
   if (!'alpha_tau' %in% names(list_init) | ('alpha_tau' %in% names(list_init) & is.null(list_init$alpha_tau))) {
@@ -225,11 +226,15 @@ gm_vbem_core  <- function(Y,
   beta_tau <- list_init$beta_tau
 
   if(version == 1 ){
+
     alpha_rho <- list_init$alpha_rho
     beta_rho <- list_init$beta_rho
+
   }else if(version == 2){
+
     mu_zeta <- list_init$mu_zeta
     sig2_inv_zeta <- list_init$sig2_inv_zeta
+
   }
   #
 
@@ -244,28 +249,21 @@ gm_vbem_core  <- function(Y,
     m_log_one_minus_rho <- get_m_log_one_minus_o(alpha_rho, beta_rho)
 
   }else if(version==2){
+
     theta <- rep(0, P)
     m1_alpha <- get_Alpha(theta, mu_zeta, P)
+
   }
 
 
   if (verbose) cat("... done. == \n\n")
 
-  # track ELBO after each maximisation step
-  #
-  if (track_ELBO) {
-
-    vec_ELBO_M <- c()
-
-  } else{
-
-    vec_ELBO_M <- NA
-
-  }
-
   # debug mode
   #
   if (debug) {
+
+    # track ELBO after each maximisation step
+    vec_ELBO_M <- c()
 
     # track ELBO within each variational step
     list_ELBO <- list()
@@ -329,9 +327,13 @@ gm_vbem_core  <- function(Y,
 
       # % # m_delta
       if(version == 1){
+
         m_delta <- update_m_delta_betap(Omega, m_tau, m_log_rho, m_log_one_minus_rho, v0, v1, vbc)
+
       }else if(version == 2){
+
         m_delta <- update_m_delta(Omega, m_tau, m1_alpha, v0, v1, vbc)
+
       }
 
       E1 <- get_E1(m_delta, v0, v1)
@@ -372,7 +374,7 @@ gm_vbem_core  <- function(Y,
 
         # % #
         m1_alpha <- get_Alpha(theta, mu_zeta, P)
-        sum_var_alpha <- P * (P-1)/2 * sig2_inv_zeta^(-1)
+        sum_var_alpha <- P * (P-1) / 2 * sig2_inv_zeta^(-1)
         # % #
 
       }
@@ -403,7 +405,9 @@ gm_vbem_core  <- function(Y,
                                      N,
                                      P,
                                      vbc)
+
       }else if(version == 2){
+
         ELBO <-  get_elbo_gm_vbem_v2(Omega,
                                      m_delta,
                                      alpha_tau,
@@ -427,6 +431,7 @@ gm_vbem_core  <- function(Y,
                                      N,
                                      P,
                                      vbc)
+
       }
 
       ELBO_diff <- abs(ELBO - ELBO_old)
@@ -481,6 +486,7 @@ gm_vbem_core  <- function(Y,
     if (debug) {
 
       if(version==1){
+
         ELBO_M0 <-  get_elbo_gm_vbem_v1(Omega,
                                         m_delta,
                                         alpha_tau,
@@ -503,7 +509,9 @@ gm_vbem_core  <- function(Y,
                                         N,
                                         P,
                                         vbc)
+
       }else if(version == 2){
+
         ELBO_M0 <- get_elbo_gm_vbem_v2(Omega,
                                        m_delta,
                                        alpha_tau,
@@ -527,6 +535,7 @@ gm_vbem_core  <- function(Y,
                                        N,
                                        P,
                                        vbc)
+
       }
     }
 
@@ -573,6 +582,7 @@ gm_vbem_core  <- function(Y,
                                      N,
                                      P,
                                      vbc)
+
     }else if(version == 2){
 
       ELBO_M <- get_elbo_gm_vbem_v2(Omega,
@@ -598,6 +608,7 @@ gm_vbem_core  <- function(Y,
                                     N,
                                     P,
                                     vbc)
+
     }
 
 
@@ -619,7 +630,7 @@ gm_vbem_core  <- function(Y,
 
     ELBO_M_old <- ELBO_M
 
-    if (track_ELBO) {
+    if (debug) {
       vec_ELBO_VBEM <- c(vec_ELBO_VBEM, ELBO_M)
     }
   }
@@ -668,7 +679,8 @@ gm_vbem_core  <- function(Y,
 
     debugs <- list( n_warning = n_warning,
                     vec_n_warning_VB = vec_n_warning_VB,
-                    list_ELBO = list_ELBO)
+                    list_ELBO = list_ELBO,
+                    vec_ELBO_M = vec_ELBO_M)
 
   }else{
 
@@ -682,7 +694,6 @@ gm_vbem_core  <- function(Y,
     debugs,
     it,
     vec_VB_it,
-    vec_ELBO_M,
     pt
   )
 }

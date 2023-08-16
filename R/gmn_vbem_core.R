@@ -12,7 +12,6 @@ gmn_vbem_core  <- function(Y,
                            tol = 1e-1,
                            maxit = 1e3,
                            verbose = T,
-                           track_ELBO = F,
                            debug = F
 ) {
 
@@ -44,7 +43,6 @@ gmn_vbem_core  <- function(Y,
       tol = tol,
       maxit = maxit,
       verbose = verbose,
-      track_ELBO = track_ELBO,
       debug = debug
     )
 
@@ -90,8 +88,8 @@ gmn_vbem_core  <- function(Y,
   list_hyper <- set_default(list_hyper, 't02', 0.5)
   if(list_hyper$t02 <= 0)stop("t02 must be positive.")
 
-  # list2env(list_hyper, envir = .GlobalEnv)
 
+  # list2env(list_hyper, envir = .GlobalEnv)
   lambda <- list_hyper$lambda
   v0 <- list_hyper$v0
   v1 <- list_hyper$v1
@@ -149,6 +147,7 @@ gmn_vbem_core  <- function(Y,
     }else if(any(list_init$sig2_inv_beta <=0 )){
       stop("sig2_inv_beta must be positive.")
     }
+
   }
 
   if (!'mu_zeta' %in% names(list_init) | ('mu_zeta' %in% names(list_init) & is.null(list_init$mu_zeta))) {
@@ -244,24 +243,14 @@ gmn_vbem_core  <- function(Y,
 
   if (verbose) cat("... done. == \n\n")
 
-  # track ELBO after each maximisation step
-  #
-  if (track_ELBO) {
-
-    vec_ELBO_M <- c()
-
-  } else{
-
-    vec_ELBO_M <- NA
-
-  }
-
   # debug mode
   #
   if (debug) {
 
     # track ELBO within each variational step
     list_ELBO <- list()
+    # track ELBO after each maximisation step
+    vec_ELBO_M <- c()
 
     # record number of warnings
     n_warning <- 0
@@ -408,6 +397,7 @@ gmn_vbem_core  <- function(Y,
                                  N,
                                  P,
                                  vbc)
+
       ELBO_diff <- abs(ELBO - ELBO_old)
 
       # check the increasing ELBO in the variational step
@@ -562,7 +552,7 @@ gmn_vbem_core  <- function(Y,
 
     ELBO_M_old <- ELBO_M
 
-    if (track_ELBO) {
+    if (debug) {
       vec_ELBO_VBEM <- c(vec_ELBO_VBEM, ELBO_M)
     }
   }
@@ -600,7 +590,8 @@ gmn_vbem_core  <- function(Y,
 
     debugs <- list( n_warning = n_warning,
                     vec_n_warning_VB = vec_n_warning_VB,
-                    list_ELBO = list_ELBO)
+                    list_ELBO = list_ELBO,
+                    vec_ELBO_VBEM = vec_ELBO_VBEM)
 
   }else{
 
@@ -614,7 +605,6 @@ gmn_vbem_core  <- function(Y,
     debugs,
     it,
     vec_VB_it,
-    vec_ELBO_M,
     pt
   )
 }

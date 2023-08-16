@@ -12,7 +12,6 @@ gmss_vbem_core  <- function(Y,
                             tol = 1e-1,
                             maxit = 1e3,
                             verbose = T,
-                            track_ELBO = F,
                             debug = F
 ) {
 
@@ -45,7 +44,6 @@ gmss_vbem_core  <- function(Y,
       tol = tol,
       maxit = maxit,
       verbose = verbose,
-      track_ELBO = track_ELBO,
       debug = debug
     )
 
@@ -293,24 +291,14 @@ gmss_vbem_core  <- function(Y,
 
   if (verbose) cat("... done. == \n\n")
 
-  # track ELBO after each maximisation step
-  #
-  if (track_ELBO) {
-
-    vec_ELBO_M <- c()
-
-  } else{
-
-    vec_ELBO_M <- NA
-
-  }
-
   # debug mode
   #
   if (debug) {
 
     # track ELBO within each variational step
     list_ELBO <- list()
+    # track ELBO after each maximisation step
+    vec_ELBO_M <- c()
 
     # record number of warnings
     n_warning <- 0
@@ -484,6 +472,7 @@ gmss_vbem_core  <- function(Y,
                                   N,
                                   P,
                                   vbc)
+
       ELBO_diff <- abs(ELBO - ELBO_old)
 
       # check the increasing ELBO in the variational step
@@ -650,7 +639,7 @@ gmss_vbem_core  <- function(Y,
 
     ELBO_M_old <- ELBO_M
 
-    if (track_ELBO) {
+    if (debug) {
       vec_ELBO_M <- c(vec_ELBO_M, ELBO_M)
     }
   }
@@ -690,7 +679,8 @@ gmss_vbem_core  <- function(Y,
 
     debugs <- list( n_warning = n_warning,
                     vec_n_warning_VB = vec_n_warning_VB,
-                    list_ELBO = list_ELBO)
+                    list_ELBO = list_ELBO,
+                    vec_ELBO_M = vec_ELBO_M)
 
   }else{
 
@@ -704,7 +694,6 @@ gmss_vbem_core  <- function(Y,
     debugs,
     it,
     vec_VB_it,
-    vec_ELBO_M,
     pt
   )
 }

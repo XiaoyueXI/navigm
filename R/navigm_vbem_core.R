@@ -4,10 +4,12 @@
 
 navigm_vbem_core <- function(Y, V =NULL,
                               method = 'GMSS',
-                              list_hyper = NULL, list_init = NULL,
-                              tol = 0.1, maxit = 1000,
+                              list_hyper = NULL,
+                              list_init = NULL,
+                              tol = 0.1,
+                              maxit = 1000,
                               verbose = T,
-                              track_ELBO = F, debug = F,
+                              debug = F,
                               version = NULL) {
 
 
@@ -25,14 +27,13 @@ navigm_vbem_core <- function(Y, V =NULL,
                         tol = tol,
                         maxit = maxit,
                         verbose = verbose,
-                        track_ELBO = track_ELBO,
                         debug = debug,
                         version = version)
 
   }else if(method == 'GMN'){
 
     cat(paste0("============================================================================================================== \n",
-               "== GMN: spike-and-slab graphical model with normal prior for the node-level auxiliary variable coefficients == \n",
+               "== GMN: spike-and-slab graphical model with normal priors for the node-level auxiliary variable coefficients == \n",
                "============================================================================================================== \n\n"))
 
     ans <- gmn_vbem_core(Y,
@@ -42,14 +43,13 @@ navigm_vbem_core <- function(Y, V =NULL,
                          tol = tol,
                          maxit = maxit,
                          verbose = verbose,
-                         track_ELBO = track_ELBO,
                          debug = debug)
 
 
   }else if(method == 'GMSS'){
 
     cat(paste0("====================================================================================================================== \n",
-               "== GMSS: spike-and-slab graphical model with spike-and-slab prior for the node-level auxiliary variable coefficients == \n",
+               "== GMSS: spike-and-slab graphical model with spike-and-slab priors for the node-level auxiliary variable coefficients == \n",
                "====================================================================================================================== \n\n"))
 
     ans <- gmss_vbem_core(Y,
@@ -59,7 +59,6 @@ navigm_vbem_core <- function(Y, V =NULL,
                           tol = tol,
                           maxit = maxit,
                           verbose = verbose,
-                          track_ELBO = track_ELBO,
                           debug = debug)
 
   }

@@ -119,9 +119,8 @@ e_beta_gamma <- function(m_gamma,
                          m_log_o,
                          m_log_one_minus_o,
                          m2_beta,
-                         sig2_inv_beta,
-                         a_sigma,
-                         b_sigma){
+                         sig2_inv_beta
+                         ){
 
   eps <- .Machine$double.eps
 
@@ -280,9 +279,7 @@ e_beta_gmn <- function(m_gamma,
                        m_sig2_inv,
                        m_log_sig2_inv,
                        m2_beta,
-                       sig2_inv_beta,
-                       a_sigma,
-                       b_sigma){
+                       sig2_inv_beta){
 
   eps <- .Machine$double.eps
 
@@ -355,9 +352,7 @@ get_elbo_gmn_vbem <- function(Omega,
                  m_sig2_inv,
                  m_log_sig2_inv,
                  m2_beta,
-                 sig2_inv_beta,
-                 a_sigma,
-                 b_sigma) +
+                 sig2_inv_beta) +
       e_sigma(alpha_sigma,
               beta_sigma,
               m_sig2_inv,
@@ -389,7 +384,7 @@ e_delta_rho <- function(alpha_rho,
   (effective_sum(m_delta[bool_up]) + a_rho - alpha_rho) * m_log_rho +
     (effective_sum(1 - m_delta[bool_up]) + b_rho - beta_rho) * m_log_one_minus_rho +
     lbeta(alpha_rho, beta_rho) -
-    effective_sum(m_delta[bool_up] * log(m_delta[bool_up] + eps))-
+    effective_sum(m_delta[bool_up] * log(m_delta[bool_up] + eps)) -
     effective_sum((1-m_delta[bool_up]) * log(1-m_delta[bool_up] + eps))
 
 
@@ -470,7 +465,7 @@ get_elbo_gm_vbem_v2 <- function(Omega,
                                 b_tau,
                                 N,
                                 P,
-                                c) {
+                                c = 1) {
 
   c * (
     e_y(Omega, S, N) +
