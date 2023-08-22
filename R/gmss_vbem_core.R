@@ -577,7 +577,7 @@ gmss_vbem_core  <- function(Y,
     #     Sigma <- out$Sigma
     #   }
     # } else {
-      Omega <- get_omega(m_tau * E1, S, Omega, lambda, N, P)
+    Omega <- get_omega(m_tau * E1, S, Omega, lambda, N, P)
     # }
     # % #
 

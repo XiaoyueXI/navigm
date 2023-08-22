@@ -298,7 +298,7 @@ gmn_em_core <-  function(Y,
     #     Sigma <- out$Sigma
     #   }
     # } else {
-      Omega <- get_omega(tau1 * E1, S, Omega, lambda, N, P)
+    Omega <- get_omega(tau1 * E1, S, Omega, lambda, N, P)
     # }
 
 

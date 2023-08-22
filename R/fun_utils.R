@@ -268,18 +268,19 @@ get_n0_t02 <- function(p, p_star) {
 #' inspired by Learning Graphical Models With Hubs, JMLR, 2014, P.3307.
 #'
 #' @param N Scalar. Number of observations.
-#' @param A An adjacency matrix.
-#' @param vec_magnitude A vector of two positive numbers indicating the range of absolute magnitudes of precision matrix entries.
-#' @param bool_scale Logical. If TRUE (default), scale the samples; otherwise, not scale.
 #'
+#' @param A An adjacency matrix.
+#'
+#' @param vec_magnitude A vector of two positive numbers indicating the range of absolute magnitudes of precision matrix entries.
+#'
+#' @param bool_scale Logical. If TRUE (default), scale the samples; otherwise, not scale.
 #'
 #' @return A list containing the simulated data:
 #'  \describe{
-#'  \item{A} the input adjacency matrix.
-#'  \item{Omega} the simulated adjacency matrix of same size and structure of the pre-specified adjacency matrix.
-#'  \item{Y} the simulated observations with N rows and \code{ncol(A)} columns.
-#'}
-#'
+#'  \item{A}{the input adjacency matrix.}
+#'  \item{Omega}{the simulated adjacency matrix of same size and structure of the pre-specified adjacency matrix.}
+#'  \item{Y}{the simulated observations with N rows and \code{ncol(A)} columns.}
+#' }
 #' @importFrom mvtnorm rmvnorm
 #' @importFrom stats runif
 #' @export

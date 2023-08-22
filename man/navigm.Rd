@@ -15,16 +15,21 @@ navigm(
   ne0 = NULL,
   tol = 0.1,
   maxit = 1000,
+  transformV = F,
   verbose = T,
-  track_ELBO = F,
   debug = F,
   version = NULL,
-  numCores = NULL,
-  transformV = F,
-  full_output = F
+  full_output = F,
+  numCores = NULL
 )
 }
 \arguments{
+\item{Y}{Data matrix of dimension N x P, where N is the number of samples and P is the number of nodes in the graph.
+\code{Y} will be centred within \code{navigm_core} call.}
+
+\item{V}{Input matrix of dimension P x Q, where Q is the number of candidate auxiliary variables. No need to supply intercept.
+If \code{V} is not specified, set \code{method = 'GM'}.}
+
 \item{method}{Character: the method to use, including
 "GM" (vanilla spike-and-slab graphical model),
 "GMN" (spike-and-slab graphical model with normal priors on the node-level auxiliary variable coefficients), and
@@ -91,6 +96,9 @@ the number of edges in absence of hubs. Will not be used if \code{n0} in \code{l
 
 \item{maxit}{Scalar: maximum number of iterations allowed (default is 1000).}
 
+\item{transformV}{Logical; if \code{FALSE} (default), \code{V} will not be transformed;
+Otherwise and if \code{V} does not range within [0,1],  \code{V} will be standardised within \code{navigm} call.}
+
 \item{verbose}{Logical; if \code{TRUE} (default), standard verbosity; otherwise, no messages.}
 
 \item{debug}{Logical; if \code{FALSE} (default), not record additional terms for the purpose of debugging;
@@ -100,13 +108,10 @@ possibly due to numerical round-off; track ELBOs after the maximisation step (EM
 \item{version}{Integer; take values of 1 (a beta prior on edge inclusion probabilities) or 2 (a normal prior on probit edge inclusion probabilities).
 (a valid option when \code{method = 'GM'}).}
 
-\item{numCores}{number of cores for the parallel computation. The default is to use all the available cores in the machine.}
-
-\item{transformV}{Logical; if \code{FALSE} (default), \code{V} will not be transformed;
-Otherwise and if \code{V} does not range within [0,1],  \code{V} will be standardised within \code{navigm} call.}
-
 \item{full_output}{Logical; if \code{FALSE}, only return final estimates of model parameters.
 Otherwise, return estimates for all the explored models.}
+
+\item{numCores}{number of cores for the parallel computation. The default is to use all the available cores in the machine.}
 }
 \value{
 A list containing the following quantities:
@@ -133,10 +138,10 @@ A list containing the following quantities:
 \item{it}{Scalar. Total number of iterations. }
 \item{vec_VB_it}{Vector of length \code{it}. Number of iterations within each variational update.}
 \item{pt}{Scalar. Algorithm runtime in seconds. }
-\item{args}{A list containing the input arguments.}
+\item{args}{A list containing the input arguments in the final selected model.}
 \item{full_outputs}{A list contains the outputs from \code{navigm_core} for all the explored models.}
 \item{index}{Index (or indices for GMSS-EM) of the selected spike variance.}
-\item{vec_criterion}{Vector of length same as candidate spike variances contains the corresponding model selection criteria. }
+\item{vec_criterion}{A list contains the model seletion criterion used and its evaluations on a grid of spike variances. }
 \item{total_pt}{Total algorithm runtime in seconds. }
 }
 }

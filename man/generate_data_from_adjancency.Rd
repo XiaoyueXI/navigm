@@ -23,9 +23,9 @@ generate_data_from_adjancency(
 \value{
 A list containing the simulated data:
  \describe{
- \item{A} the input adjacency matrix.
- \item{Omega} the simulated adjacency matrix of same size and structure of the pre-specified adjacency matrix.
- \item{Y} the simulated observations with N rows and \code{ncol(A)} columns.
+ \item{A}{the input adjacency matrix.}
+ \item{Omega}{the simulated adjacency matrix of same size and structure of the pre-specified adjacency matrix.}
+ \item{Y}{the simulated observations with N rows and \code{ncol(A)} columns.}
 }
 }
 \description{

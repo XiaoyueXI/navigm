@@ -250,9 +250,7 @@ get_elbo_gmss_vbem <- function(Omega,
                    m_log_o,
                    m_log_one_minus_o,
                    m2_beta,
-                   sig2_inv_beta,
-                   a_sigma,
-                   b_sigma) +
+                   sig2_inv_beta) +
       e_o(alpha_o,
           beta_o,
           m_log_o,

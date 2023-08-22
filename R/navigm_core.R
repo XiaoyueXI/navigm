@@ -117,6 +117,7 @@
 #'  (3) \code{vec_ELBO_M}: Vector of length \code{it}. Track ELBO after the maximisation step.
 #'  (4) \code{list_ELBO}: List of length \code{it}. Track ELBO within each variational update.  }
 #' \item{it}{Scalar. Total number of iterations. }
+#' \item{args}{A list containing the input arguments in the final selected model.}
 #' \item{vec_VB_it}{Vector of length \code{it}. Number of iterations within each variational update.}
 #' \item{pt}{Scalar. Algorithm runtime in seconds. }
 #' }
@@ -144,30 +145,42 @@
 
 
 navigm_core <- function(Y, V =NULL,
-                         method = 'GMSS',
-                         inference = 'VBEM',
-                         list_hyper = NULL, list_init = NULL,
-                         ne0 = NULL,
-                         tol = 0.1, maxit = 1000,
-                         verbose = T,
-                         debug = F,
-                         version = NULL,
-                         # transformY = T,# as mean is 0, always centre Y
-                         transformV = F) {
+                        method = 'GMSS',
+                        inference = 'VBEM',
+                        list_hyper = NULL,
+                        list_init = NULL,
+                        ne0 = NULL,
+                        tol = 0.1,
+                        maxit = 1000,
+                        # transformY = T,# as mean is 0, always centre Y
+                        transformV = F,
+                        debug = F,
+                        verbose = T,
+                        version = NULL) {
 
 
   if (verbose){
+
     cat(paste0("\n======================= \n",
                "== Preprocess data ... == \n",
                "======================= \n\n"))
+
   }
 
+
+  # preprocess not in navigm
+  # such that navigm_core is usable standalone.
+  #
   if(!is.null(V)){
 
+    # min requirement to include node-level variables
+    #
     if(ncol(Y)!=nrow(V)){
       stop('Columns of Y and rows of V must match.')
     }
 
+    # if scale V
+    #
     if(transformV){
       # if V \in [0,1] not scale
       if(min(V) < 0 | max(V) > 1){
@@ -177,23 +190,32 @@ navigm_core <- function(Y, V =NULL,
       }
     }
 
+    # no node-level variables
+    #
     if(!is.null(V) & method == 'GM' ){
       warning("node-level auxiliary variables (V) will not be used in GM. Please consider GMN and GMSS to leverage V.")
     }
 
+    # low number of node-level variables
+    #
     if(ncol(V) <= 10 & method =='GMSS'){
       warning("Number of node-level auxiliary variables <= 10, not advised to select and change to GMN.")
     }
 
+    # high number of node-level variables
+    #
     if(ncol(V) > 10 & method =='GMN'){
       warning("Number of node-level auxiliary variables > 10, advised to select and change to GMSS.")
     }
 
+    #
     if(is.null(V) & (method == 'GMN' | method == 'GMSS')){
       warning('node-level auxiliary variables (V) must be provided in GMN and GMSS. Change to GM.')
       method <- 'GM'
     }
 
+    # variable names
+    #
     if (is.null(colnames(Y)) & is.null(rownames(V)))
       colnames(Y) <- rownames(V) <- paste0("Node_", 1:ncol(Y))
     else if (is.null(colnames(Y))) colnames(Y) <- rownames(V)
@@ -208,15 +230,20 @@ navigm_core <- function(Y, V =NULL,
 
 
   # as mean is 0, always centre Y
+  #
   # if(transformY){
   Y <- scale(Y, center = TRUE, scale = FALSE) # center the data
   # }
 
 
+  # version
+  #
   if(!is.null(version) & (method == 'GMN' | method == 'GMSS')){
     warning("version is not used in GMN & GMSS.")
   }
 
+  # ne0
+  #
   if(!is.null(list_hyper) & 'n0' %in% names(list_hyper) & 't02' %in% names(list_hyper)){
 
     warning(paste0("Provided argument ne0 not used, as n0 and t02 were provided in list_hyper."))
@@ -230,7 +257,7 @@ navigm_core <- function(Y, V =NULL,
 
     }else{
       P <- ncol(Y)
-      tmp <- get_n0_t02(P*(P-1)/2, ne0)
+      tmp <- get_n0_t02(P * (P-1) / 2, ne0)
       list_hyper$n0 <-  tmp$n0
       list_hyper$t02 <-  tmp$t02
 
@@ -267,6 +294,17 @@ navigm_core <- function(Y, V =NULL,
   if(inference == 'EM'){
 
     res_navigm <- navigm_em_core(Y = Y,
+                                 V = V,
+                                 method = method,
+                                 list_hyper = list_hyper,
+                                 list_init = list_init,
+                                 tol = tol,
+                                 maxit = maxit,
+                                 verbose = verbose,
+                                 debug = debug,
+                                 version = version)
+  }else if(inference == 'VBEM'){
+    res_navigm <- navigm_vbem_core(Y = Y,
                                    V = V,
                                    method = method,
                                    list_hyper = list_hyper,
@@ -274,21 +312,8 @@ navigm_core <- function(Y, V =NULL,
                                    tol = tol,
                                    maxit = maxit,
                                    verbose = verbose,
-                                   track_ELBO = track_ELBO,
                                    debug = debug,
                                    version = version)
-  }else if(inference == 'VBEM'){
-    res_navigm <- navigm_vbem_core(Y = Y,
-                                     V = V,
-                                     method = method,
-                                     list_hyper = list_hyper,
-                                     list_init = list_init,
-                                     tol = tol,
-                                     maxit = maxit,
-                                     verbose = verbose,
-                                     track_ELBO = track_ELBO,
-                                     debug = debug,
-                                     version = version)
   }
 
   return(res_navigm)

@@ -3,14 +3,14 @@
 
 
 navigm_vbem_core <- function(Y, V =NULL,
-                              method = 'GMSS',
-                              list_hyper = NULL,
-                              list_init = NULL,
-                              tol = 0.1,
-                              maxit = 1000,
-                              verbose = T,
-                              debug = F,
-                              version = NULL) {
+                             method = 'GMSS',
+                             list_hyper = NULL,
+                             list_init = NULL,
+                             tol = 0.1,
+                             maxit = 1000,
+                             verbose = T,
+                             debug = F,
+                             version = NULL) {
 
 
   if(method == 'GM'){

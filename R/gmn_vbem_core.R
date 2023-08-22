@@ -250,7 +250,7 @@ gmn_vbem_core  <- function(Y,
     # track ELBO within each variational step
     list_ELBO <- list()
     # track ELBO after each maximisation step
-    vec_ELBO_M <- c()
+    vec_ELBO_VBEM <- c()
 
     # record number of warnings
     n_warning <- 0
@@ -496,7 +496,7 @@ gmn_vbem_core  <- function(Y,
     #     Sigma <- out$Sigma
     #   }
     # } else {
-      Omega <- get_omega(m_tau * E1, S, Omega, lambda, N, P)
+    Omega <- get_omega(m_tau * E1, S, Omega, lambda, N, P)
     # }
     # % #
 

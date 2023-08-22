@@ -7,6 +7,12 @@
 #' This function performs simultaneous inference of Gaussian spike-and-slab and node-level auxiliary variable.
 #' The graph-level continuous spike-and-slab priors require the exploration of a grid of spike variances and model selections.
 #'
+#' @param Y Data matrix of dimension N x P, where N is the number of samples and P is the number of nodes in the graph.
+#'   \code{Y} will be centred within \code{navigm_core} call.
+#'
+#' @param V Input matrix of dimension P x Q, where Q is the number of candidate auxiliary variables. No need to supply intercept.
+#'   If \code{V} is not specified, set \code{method = 'GM'}.
+#'
 #' @param method Character: the method to use, including
 #'  "GM" (vanilla spike-and-slab graphical model),
 #'  "GMN" (spike-and-slab graphical model with normal priors on the node-level auxiliary variable coefficients), and
@@ -122,10 +128,10 @@
 #' \item{it}{Scalar. Total number of iterations. }
 #' \item{vec_VB_it}{Vector of length \code{it}. Number of iterations within each variational update.}
 #' \item{pt}{Scalar. Algorithm runtime in seconds. }
-#' \item{args}{A list containing the input arguments.}
+#' \item{args}{A list containing the input arguments in the final selected model.}
 #' \item{full_outputs}{A list contains the outputs from \code{navigm_core} for all the explored models.}
 #' \item{index}{Index (or indices for GMSS-EM) of the selected spike variance.}
-#' \item{vec_criterion}{Vector of length same as candidate spike variances contains the corresponding model selection criteria. }
+#' \item{vec_criterion}{A list contains the model seletion criterion used and its evaluations on a grid of spike variances. }
 #' \item{total_pt}{Total algorithm runtime in seconds. }
 #' }
 #'
@@ -155,25 +161,27 @@
 
 
 navigm <- function(Y, V =NULL,
-                    method = 'GMSS',
-                    inference = 'VBEM',
-                    criterion = 'AIC',
-                    list_hyper = NULL, list_init = NULL,
-                    ne0 = NULL,
-                    tol = 0.1, maxit = 1000,
-                    verbose = T,
-                    track_ELBO = F, debug = F,
-                    version = NULL,
-                    numCores = NULL,
-                    # transformY = T,# as mean is 0, always centre Y
-                    transformV = F,
-                    full_output = F) {
+                   method = 'GMSS',
+                   inference = 'VBEM',
+                   criterion = 'AIC',
+                   list_hyper = NULL,
+                   list_init = NULL,
+                   ne0 = NULL,
+                   tol = 0.1,
+                   maxit = 1000,
+                   # transformY = T,# as mean is 0, always centre Y
+                   transformV = F,
+                   verbose = T,
+                   debug = F,
+                   version = NULL,
+                   full_output = F,
+                   numCores = NULL) {
 
   # Time
   #
   pt <- Sys.time()
 
-  # Set up
+  # Set up cores
   #
   if(is.null(numCores)){
     numCores <- parallel::detectCores()
@@ -181,7 +189,8 @@ navigm <- function(Y, V =NULL,
   doParallel::registerDoParallel(numCores)
 
   #
-
+  # Set up the grid of spike variances
+  #
   list_hyper <- set_default(list_hyper, 'v0_v', seq(1e-4,  1, length.out = 16))
   if(any(list_hyper$vec_v0 <= 0))stop("all the entries of vec_v0 must be positive.")
 
@@ -204,46 +213,45 @@ navigm <- function(Y, V =NULL,
     out <- foreach (v0 = list_hyper$v0_v) %dopar% {
       list_hyper$v0 <- v0
       navigm_core(Y = Y,
-                   V = V,
-                   method = method,
-                   inference = inference,
-                   list_hyper = list_hyper,
-                   list_init = list_init,
-                   ne0 = ne0,
-                   tol = tol,
-                   maxit = maxit,
-                   verbose = verbose,
-                   track_ELBO = track_ELBO,
-                   debug = debug,
-                   version = version,
-                   transformV = transformV)
+                  V = V,
+                  method = method,
+                  inference = inference,
+                  list_hyper = list_hyper,
+                  list_init = list_init,
+                  ne0 = ne0,
+                  tol = tol,
+                  maxit = maxit,
+                  verbose = verbose,
+                  debug = debug,
+                  version = version,
+                  transformV = transformV)
     }
   }else{
+    # double grid search GMSS-EM
     out <- foreach (v0 = list_hyper$v0_v) %:%
       foreach(s0 = list_hyper$s0_v)%dopar% {
         list_hyper$v0 <- v0
         list_hyper$s0 <- s0
         navigm_core(Y = Y,
-                     V = V,
-                     method = method,
-                     inference = inference,
-                     list_hyper = list_hyper,
-                     list_init = list_init,
-                     ne0 = ne0,
-                     tol = tol,
-                     maxit = maxit,
-                     verbose = verbose,
-                     track_ELBO = track_ELBO,
-                     debug = debug,
-                     version = version,
-                     transformV = transformV)
+                    V = V,
+                    method = method,
+                    inference = inference,
+                    list_hyper = list_hyper,
+                    list_init = list_init,
+                    ne0 = ne0,
+                    tol = tol,
+                    maxit = maxit,
+                    verbose = verbose,
+                    debug = debug,
+                    version = version,
+                    transformV = transformV)
       }
   }
 
 
   if (verbose) cat("... done. == \n\n")
 
-  if (verbose) cat("== Select from a grid of spike variance using",criterion," ... \n\n")
+  if (verbose) cat("== Select from a grid of spike variance using", criterion," ... \n\n")
 
   if(criterion == 'AIC'){
 
@@ -254,7 +262,9 @@ navigm <- function(Y, V =NULL,
         sapply(x, function(y){
           AIC_GSS(y$estimates,N = nrow(y$args$Y))
         })
-      }))}
+      }))
+      # each row represents v0
+    }
 
 
   }else if(criterion == 'BIC'){
@@ -305,7 +315,14 @@ navigm <- function(Y, V =NULL,
         cat('These indices are all equally the best: \n')
         print(index)
       }
-      index <- index[1,]
+      # avoid selecting on two ends
+      tmp <- which(apply(index, 1, function(x)sum(x==1 | x==length(list_hyper$v0_v))) == 0)
+      if(length(tmp) == 0){
+        # all rows reach boundary
+        index <- index[sample(nrow(index),1),]
+      }else{
+        index <- index[sample(tmp,1),]
+      }
     }
 
     if(index[1] == 1){
@@ -329,19 +346,27 @@ navigm <- function(Y, V =NULL,
   }else{
     if(verbose) cat("Select the index", index, " i.e., v0 = ", list_hyper$v0_v[index[1]] ," and s0 = ", list_hyper$s0_v[index[2]], ",the best",criterion, " = ", vec_criterion[index[1], index[2]], '.\n\n')
   }
+
+
   pt <- Sys.time() - pt
   cat('Total runtime: ',format(pt), '.\n')
 
   if(!(method =='GMSS' & inference == 'EM')){
 
     ans <- out[[index]]
+
   }else{
+
     ans <- out[[index[1]]][[index[2]]]
+
   }
+
+
   ans <- c(ans,
            list(
              index = index,
-             vec_criterion = vec_criterion,
+             model_criterion = list(type = criterion,
+                                    value = vec_criterion),
              total_pt = pt
            ))
 

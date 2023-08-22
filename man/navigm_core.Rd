@@ -14,10 +14,10 @@ navigm_core(
   ne0 = NULL,
   tol = 0.1,
   maxit = 1000,
-  verbose = T,
+  transformV = F,
   debug = F,
-  version = NULL,
-  transformV = F
+  verbose = T,
+  version = NULL
 )
 }
 \arguments{
@@ -90,17 +90,17 @@ the number of edges in absence of hubs. Will not be used if \code{n0} in \code{l
 
 \item{maxit}{Scalar: maximum number of iterations allowed (default is 1000).}
 
-\item{verbose}{Logical; if \code{TRUE} (default), standard verbosity; otherwise, no messages.}
+\item{transformV}{Logical; if \code{FALSE} (default), \code{V} will not be transformed;
+Otherwise and if \code{V} does not range within [0,1],  \code{V} will be standardised within \code{navigm} call.}
 
 \item{debug}{Logical; if \code{FALSE} (default), not record additional terms for the purpose of debugging;
 otherwise, record the number of decreasing ELBOs in the maximisation step (EM, VBEM) and within each variational update (VBEM),
 possibly due to numerical round-off; track ELBOs after the maximisation step (EM, VBEM) and within each variational update (VBEM).}
 
+\item{verbose}{Logical; if \code{TRUE} (default), standard verbosity; otherwise, no messages.}
+
 \item{version}{Integer; take values of 1 (a beta prior on edge inclusion probabilities) or 2 (a normal prior on probit edge inclusion probabilities).
 (a valid option when \code{method = 'GM'}).}
-
-\item{transformV}{Logical; if \code{FALSE} (default), \code{V} will not be transformed;
-Otherwise and if \code{V} does not range within [0,1],  \code{V} will be standardised within \code{navigm} call.}
 }
 \value{
 A list containing the following quantities:
@@ -125,6 +125,7 @@ A list containing the following quantities:
  (3) \code{vec_ELBO_M}: Vector of length \code{it}. Track ELBO after the maximisation step.
  (4) \code{list_ELBO}: List of length \code{it}. Track ELBO within each variational update.  }
 \item{it}{Scalar. Total number of iterations. }
+\item{args}{A list containing the input arguments in the final selected model.}
 \item{vec_VB_it}{Vector of length \code{it}. Number of iterations within each variational update.}
 \item{pt}{Scalar. Algorithm runtime in seconds. }
 }
