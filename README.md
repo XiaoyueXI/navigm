@@ -1,20 +1,18 @@
 
 # navigm
 
-The `navigm` is an R package that implements a Gaussian graphical
-spike-and-slab model for estimating associations between variables
-(nodes). In addition to the primary measurements of node variables, this
-package allows for incorporating node-level auxiliary variables. The
-method is tailored to enhance the detection of conditional dependence
-structure by leveraging and selecting useful node-level information. The
-package employs a scalable variational Bayes expectation conditional
-maximisation algorithm to obtain posterior mode of the precision matrix
-that encodes conditional dependence between nodes and approximated
-posterior distributions of the remaining model parameters.
+The `navigm` is an R package that implements a Gaussian graphical spike-and-slab model for estimating 
+associations between variables (nodes). Alongside the primary node measurements,
+this package permits the inclusion of supplementary node-level auxiliary variables. 
+The method is tailored to enhance the identification of conditional dependence
+structure by leveraging and selecting useful information from these variables. 
+Employing a scalable variational Bayes expectation conditional maximization algorithm,
+the package attains the posterior mode of the precision matrix that pinpoints the conditional dependence between nodes,
+along with approximated posterior distributions of the remaining model parameters.
 
-The package offers several modeling options, including the choice of
-incorporating node-level variables and the option to select influential
-variables. Furthermore, it provides an alternative deterministic
+The package offers a variety of modelling options,
+including the decision to integrate node-level variables as well as the flexibility to select influential variables. 
+Furthermore, it provides an alternative deterministic
 inference algorithm, full expectation conditional maximisation, which
 has been widely used in previous studies.
 
