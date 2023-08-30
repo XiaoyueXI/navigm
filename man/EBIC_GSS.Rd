@@ -2,25 +2,40 @@
 % Please edit documentation in R/fun_summary.R
 \name{EBIC_GSS}
 \alias{EBIC_GSS}
-\title{Evaluate the extended Bayesian information criterion (BIC) for spike-and-slab Gaussian graphical models.}
+\title{Compute EBIC for a Gaussian graphical spike-and-slab model.}
 \usage{
-EBIC_GSS(estimates, gamma = 0.5, N)
+EBIC_GSS(estimates, N, gamma = 0.5)
 }
 \arguments{
 \item{estimates}{A list of parameter estimates using the \code{navigm} function,
-which includes precision matrix (Omega), edge posterior inclusion probability (m_delta)
-and a matrix S (=Y^T Y) evaluated based on data Y.}
+which includes the precision matrix (\code{Omega}), edge posterior inclusion probability (\code{m_delta}),
+and a matrix \code{S (=Y^T Y)} evaluated based on data Y.}
 
-\item{gamma}{EBIC parameter in [0,1] (default = 0.5). \code{gamma = 0} recovers BIC.
-Positive gamma leads to stronger penalisation of large graphs.
-https://arxiv.org/pdf/1011.6640.pdf shows \code{gamma=0.5} achieves a good compromise between positive selection rates and false discovery rates.}
+\item{N}{Number of samples, i.e., number of rows in the input data matrix Y of \code{navigm}.}
 
-\item{N}{number of samples (number of rows in Y).}
+\item{gamma}{A tuning parameter in EBIC valued within [0, 1].
+\code{gamma = 0} corresponds to recovering BIC.
+A positive gamma leads to stronger penalization of large graphs.
+https://arxiv.org/pdf/1011.6640.pdf suggests that
+\code{gamma = 0.5} (default) achieves a good compromise between positive selection rates and false discovery rates.}
 }
 \value{
-Scalar. Extended Bayesian information criterion of a spike-and-slab Gaussian graphical model on N-sample data Y.
+Scalar: extended Bayesian information criterion for a Gaussian graphical spike-and-slab model on data with N samples.
 }
 \description{
-This function evaluates one of the model selection criteria, extended Bayesian information criterion,
-for spike-and-slab Gaussian graphical models.
+This function evaluates one of the model selection criteria, extended Bayesian information criterion (EBIC),
+for a Gaussian graphical spike-and-slab model.
+}
+\examples{
+# simulate data
+
+seed <- 123; set.seed(seed)
+N <- 100; P <- 5; Q <- 3
+V <- matrix(rnorm(P*Q), nrow = P, ncol = Q)
+Y <- matrix(rnorm(N*P), nrow = N, ncol = P)
+
+# estimate precision matrix based on Y and meanwhile leverage node-level variables V
+ans <- navigm_core(Y, V)
+EBIC_GSS(ans$estimates,N)
+
 }

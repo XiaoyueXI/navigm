@@ -1,3 +1,8 @@
+# This file is part of the `navigm` R package:
+#     https://github.com/XiaoyueXI/navigm
+#
+# Internal utility functions
+
 # check the presence of character name in the list x; if not, set to default.
 #
 set_default <- function(x, name, default){
@@ -261,33 +266,36 @@ get_n0_t02 <- function(p, p_star) {
 }
 
 
-#' Simulate precision matrices and data given an adjacency matrix.
+#' Simulate precision matrices and data based on an adjacency matrix.
 #'
-#' This function simulates precision matrices and the observations based on
-#' the pre-specified adjacency matrix,
-#' inspired by Learning Graphical Models With Hubs, JMLR, 2014, P.3307.
+#' This function simulates precision matrices that adhere to the structure of a given adjacency matrix and
+#' generates observations from a multivariate normal distribution with mean 0 and the simulated precision matrix.
+#' The procedure follows "Learning Graphical Models With Hubs," JMLR, 2014, p. 3307.
 #'
-#' @param N Scalar. Number of observations.
-#'
+#' @param N Scalar: number of observations.
 #' @param A An adjacency matrix.
-#'
-#' @param vec_magnitude A vector of two positive numbers indicating the range of absolute magnitudes of precision matrix entries.
-#'
-#' @param bool_scale Logical. If TRUE (default), scale the samples; otherwise, not scale.
+#' @param vec_magnitude A vector containing two positive numbers
+#' that indicate the range of absolute magnitudes for the off-diagonal entries in the precision matrix.
+#' @param bool_scale Logical: If set to TRUE (default), the samples will be scaled; otherwise, they will not be scaled.
 #'
 #' @return A list containing the simulated data:
 #'  \describe{
-#'  \item{A}{the input adjacency matrix.}
-#'  \item{Omega}{the simulated adjacency matrix of same size and structure of the pre-specified adjacency matrix.}
-#'  \item{Y}{the simulated observations with N rows and \code{ncol(A)} columns.}
+#' \item{A}{The input adjacency matrix.}
+#' \item{Omega}{The simulated precision matrix of the same size and structure as the pre-specified adjacency matrix.}
+#' \item{Y}{The simulated observations with \code{N} rows and \code{nrow(A) = ncol(A)} columns.}
 #' }
+#'
+#' @examples
+#' A <- matrix(0, 5, 5); A[1,2] <- A[2,1] <- A[2,5] <- A[5,2] <- 1;
+#' simulate_data_from_adjacency_matrix(N = 10, A = A)
+#'
 #' @importFrom mvtnorm rmvnorm
 #' @importFrom stats runif
 #' @export
-generate_data_from_adjancency <- function(N,
-                                          A,
-                                          vec_magnitude = c(0.25, 0.75),
-                                          bool_scale = TRUE) {
+simulate_data_from_adjacency_matrix <- function(N,
+                                                A,
+                                                vec_magnitude = c(0.25, 0.75),
+                                                bool_scale = TRUE) {
 
   #
   P <- nrow(A)
@@ -325,38 +333,44 @@ generate_data_from_adjancency <- function(N,
 
 }
 
-#' Simulate beta distributed auxiliary variables.
+#' Simulate an auxiliary variable matrix.
 #'
-#' This function simulates auxiliary variable matrices that mimic the PPIs in a Bayesian spike-and-slab regression.
+#' This function simulates an auxiliary variable matrix.
+#' Auxiliary variables mimic the posterior probability of inclusion in a Bayesian sparse regression with spike-and-slab priors on regression coefficients.
+#' The entries are generated from a right-skewed beta distribution.
 #'
-#' @param P Scalar. Number of nodes in the graph.
-#' @param Q Scalar. Number of node-level auxiliary variables.
-#' @param alpha,beta Scalars. Shape parameters of beta distribution with default 0.05 and 0.2.
-#' @param Sigma A correlation matrix of auxiliary variables.
-#' @param min_gene Scalar. Number of influential entries per auxiliary variable.
-#' @param verbose Logical. If FALSE (default), not show messages; otherwise, show the messages.
 #'
+#' @param P Scalar: number of nodes in the graph.
+#' @param Q Scalar: number of node-level auxiliary variables.
+#' @param alpha,beta Scalars: shape parameters of the beta distribution (default values: \code{alpha = 0.05} and \code{beta = 0.2}).
+#' @param Sigma A matrix encoding the correlation between auxiliary variables (default value: an identity matrix).
+#' @param min_gene Scalar: minimum number of nodes influenced by each auxiliary variable.
+#' @param verbose Logical: If set to FALSE (default), messages will not be displayed; if set to TRUE, messages will be shown.
+#'
+#' @return A matrix of simulated auxiliary variables with dimensions \code{P x Q}.
+#' @examples
+#' simulate_auxiliary_matrix(P = 50, Q = 10)
 #'
 #' @importFrom MASS mvrnorm
 #' @importFrom stats pnorm cor qnorm runif
 #' @export
-generate_V <- function(P, Q,
-                       alpha = 0.05, beta = 0.2,
-                       Sigma = diag(Q),
-                       min_gene = round(0.05 * P),
-                       verbose = F) {
+simulate_auxiliary_matrix <- function(P, Q,
+                                      alpha = 0.05, beta = 0.2,
+                                      Sigma = diag(Q),
+                                      min_gene = round(0.05 * P),
+                                      verbose = F) {
   #
   if(P < Q){
     warning('P < Q, set empirical = F. May not be comparable with those simulated under empirical = T.\n')
     Z <- MASS::mvrnorm(n = P,
-                 mu = rep(0, nrow(Sigma)),
-                 Sigma)
+                       mu = rep(0, nrow(Sigma)),
+                       Sigma)
 
   }else{
     Z <- MASS::mvrnorm(n = P,
-                 mu = rep(0, nrow(Sigma)),
-                 Sigma,
-                 empirical = T)
+                       mu = rep(0, nrow(Sigma)),
+                       Sigma,
+                       empirical = T)
   }
 
   #
@@ -386,5 +400,47 @@ generate_V <- function(P, Q,
     }
   }
   return(V)
+}
+
+
+#' Compute a threshold based on a Bayesian FDR.
+#'
+#' This function calculates a threshold based on the Bayesian false discovery rate (FDR).
+#' The method follows the approach outlined in Newton, M.A., Noueiry, A., Sarkar, D. and Ahlquist, P., 2004. Detecting differential gene expression with a semiparametric hierarchical mixture method. Biostatistics, 5(2), pp.155-176.
+#'
+#' @param ppi A vector of continuous prediction scores, such as posterior inclusion probability, or a list containing such vectors.
+#' @param threshold_v A vector of candidate thresholds. The default is \code{seq(1e-4, 0.99, length.out = 10^4 + 1)}.
+#' @param fdr Scalar: the target Bayesian false discovery rate.
+#'
+#' @export
+#'
+#' @examples
+#' seed <- 123; set.seed(seed); x <- pnorm(rnorm(100))
+#' get_fdr_threshold(x)
+#'
+#' @export
+get_fdr_threshold <- function(ppi,
+                              threshold_v = seq(1e-4, 0.99, length.out = 10^4 + 1),
+                              fdr = 0.05){
+
+  #
+  fdr_threshold_v <- sapply(threshold_v,
+                            function(y){
+                              sum((1-ppi) * (ppi > y))/sum(ppi>y)
+                            })
+
+  if(all(is.na(fdr_threshold_v))){
+
+    threshold  <- 0.5
+    warning('No thresholds match the target FDR. Set the threshold to 0.5.')
+
+  }else{
+
+    threshold <- threshold_v[which.min(abs(fdr_threshold_v - fdr))]
+
+  }
+
+  return(threshold)
+
 }
 

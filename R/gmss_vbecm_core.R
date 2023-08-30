@@ -1,18 +1,18 @@
 # This file is part of the `navigm` R package:
 #     https://github.com/XiaoyueXI/navigm
 #
-# Internal functions to call the variational EM algorithm for GMSS
+# Internal functions to call the VBECM algorithm for GMSS
 
 #' @importFrom matrixcalc is.symmetric.matrix is.positive.definite
 #' @importFrom Matrix nearPD
-gmss_vbem_core  <- function(Y,
-                            V,
-                            list_hyper = NULL,
-                            list_init = NULL,
-                            tol = 1e-1,
-                            maxit = 1e3,
-                            verbose = T,
-                            debug = F
+gmss_vbecm_core  <- function(Y,
+                             V,
+                             list_hyper = NULL,
+                             list_init = NULL,
+                             tol = 1e-1,
+                             maxit = 1e3,
+                             verbose = T,
+                             debug = F
 ) {
 
   # Disabled options
@@ -298,7 +298,7 @@ gmss_vbem_core  <- function(Y,
     # track ELBO within each variational step
     list_ELBO <- list()
     # track ELBO after each maximisation step
-    vec_ELBO_M <- c()
+    vec_ELBO_CM <- c()
 
     # record number of warnings
     n_warning <- 0
@@ -319,11 +319,11 @@ gmss_vbem_core  <- function(Y,
   #
   it <- 0
   vec_VB_it <- c()
-  ELBO_M_diff <- Inf
-  ELBO_M_old <- -Inf
+  ELBO_CM_diff <- Inf
+  ELBO_CM_old <- -Inf
 
   #
-  while ((ELBO_M_diff > tol & (it < maxit))) {
+  while ((ELBO_CM_diff > tol & (it < maxit))) {
 
     # Iteration
     #
@@ -434,44 +434,44 @@ gmss_vbem_core  <- function(Y,
       # % #
 
       # % #
-      ELBO <-  get_elbo_gmss_vbem(Omega,
-                                  m_delta,
-                                  alpha_tau,
-                                  beta_tau,
-                                  m_tau,
-                                  m_log_tau,
-                                  mu_zeta,
-                                  sig2_inv_zeta,
-                                  m2_zeta,
-                                  m_gamma,
-                                  alpha_sigma,
-                                  beta_sigma,
-                                  m_log_sig2_inv,
-                                  m_sig2_inv,
-                                  m2_beta,
-                                  sig2_inv_beta,
-                                  m1_alpha,
-                                  sum_var_alpha,
-                                  alpha_o,
-                                  beta_o,
-                                  m_log_o,
-                                  m_log_one_minus_o,
-                                  E1,
-                                  S,
-                                  lambda,
-                                  v0,
-                                  v1,
-                                  n0,
-                                  t02,
-                                  a_tau,
-                                  b_tau,
-                                  a_sigma,
-                                  b_sigma,
-                                  a_o,
-                                  b_o,
-                                  N,
-                                  P,
-                                  vbc)
+      ELBO <-  get_elbo_gmss_vbecm(Omega,
+                                   m_delta,
+                                   alpha_tau,
+                                   beta_tau,
+                                   m_tau,
+                                   m_log_tau,
+                                   mu_zeta,
+                                   sig2_inv_zeta,
+                                   m2_zeta,
+                                   m_gamma,
+                                   alpha_sigma,
+                                   beta_sigma,
+                                   m_log_sig2_inv,
+                                   m_sig2_inv,
+                                   m2_beta,
+                                   sig2_inv_beta,
+                                   m1_alpha,
+                                   sum_var_alpha,
+                                   alpha_o,
+                                   beta_o,
+                                   m_log_o,
+                                   m_log_one_minus_o,
+                                   E1,
+                                   S,
+                                   lambda,
+                                   v0,
+                                   v1,
+                                   n0,
+                                   t02,
+                                   a_tau,
+                                   b_tau,
+                                   a_sigma,
+                                   b_sigma,
+                                   a_o,
+                                   b_o,
+                                   N,
+                                   P,
+                                   vbc)
 
       ELBO_diff <- abs(ELBO - ELBO_old)
 
@@ -518,49 +518,49 @@ gmss_vbem_core  <- function(Y,
     }
     # % #
 
-    # M step :
+    # CM step :
     # ====== #
-    #  check the increasing ELBO in the M-step
+    #  check the increasing ELBO in the CM-step
     #
     if (debug) {
-      ELBO_M0 <- get_elbo_gmss_vbem(Omega,
-                                    m_delta,
-                                    alpha_tau,
-                                    beta_tau,
-                                    m_tau,
-                                    m_log_tau,
-                                    mu_zeta,
-                                    sig2_inv_zeta,
-                                    m2_zeta,
-                                    m_gamma,
-                                    alpha_sigma,
-                                    beta_sigma,
-                                    m_log_sig2_inv,
-                                    m_sig2_inv,
-                                    m2_beta,
-                                    sig2_inv_beta,
-                                    m1_alpha,
-                                    sum_var_alpha,
-                                    alpha_o,
-                                    beta_o,
-                                    m_log_o,
-                                    m_log_one_minus_o,
-                                    E1,
-                                    S,
-                                    lambda,
-                                    v0,
-                                    v1,
-                                    n0,
-                                    t02,
-                                    a_tau,
-                                    b_tau,
-                                    a_sigma,
-                                    b_sigma,
-                                    a_o,
-                                    b_o,
-                                    N,
-                                    P,
-                                    vbc)
+      ELBO_CM0 <- get_elbo_gmss_vbecm(Omega,
+                                      m_delta,
+                                      alpha_tau,
+                                      beta_tau,
+                                      m_tau,
+                                      m_log_tau,
+                                      mu_zeta,
+                                      sig2_inv_zeta,
+                                      m2_zeta,
+                                      m_gamma,
+                                      alpha_sigma,
+                                      beta_sigma,
+                                      m_log_sig2_inv,
+                                      m_sig2_inv,
+                                      m2_beta,
+                                      sig2_inv_beta,
+                                      m1_alpha,
+                                      sum_var_alpha,
+                                      alpha_o,
+                                      beta_o,
+                                      m_log_o,
+                                      m_log_one_minus_o,
+                                      E1,
+                                      S,
+                                      lambda,
+                                      v0,
+                                      v1,
+                                      n0,
+                                      t02,
+                                      a_tau,
+                                      b_tau,
+                                      a_sigma,
+                                      b_sigma,
+                                      a_o,
+                                      b_o,
+                                      N,
+                                      P,
+                                      vbc)
     }
 
     # % # Omega
@@ -582,74 +582,74 @@ gmss_vbem_core  <- function(Y,
     # % #
 
     #
-    ELBO_M <- get_elbo_gmss_vbem(Omega,
-                                 m_delta,
-                                 alpha_tau,
-                                 beta_tau,
-                                 m_tau,
-                                 m_log_tau,
-                                 mu_zeta,
-                                 sig2_inv_zeta,
-                                 m2_zeta,
-                                 m_gamma,
-                                 alpha_sigma,
-                                 beta_sigma,
-                                 m_log_sig2_inv,
-                                 m_sig2_inv,
-                                 m2_beta,
-                                 sig2_inv_beta,
-                                 m1_alpha,
-                                 sum_var_alpha,
-                                 alpha_o,
-                                 beta_o,
-                                 m_log_o,
-                                 m_log_one_minus_o,
-                                 E1,
-                                 S,
-                                 lambda,
-                                 v0,
-                                 v1,
-                                 n0,
-                                 t02,
-                                 a_tau,
-                                 b_tau,
-                                 a_sigma,
-                                 b_sigma,
-                                 a_o,
-                                 b_o,
-                                 N,
-                                 P,
-                                 vbc)
+    ELBO_CM <- get_elbo_gmss_vbecm(Omega,
+                                   m_delta,
+                                   alpha_tau,
+                                   beta_tau,
+                                   m_tau,
+                                   m_log_tau,
+                                   mu_zeta,
+                                   sig2_inv_zeta,
+                                   m2_zeta,
+                                   m_gamma,
+                                   alpha_sigma,
+                                   beta_sigma,
+                                   m_log_sig2_inv,
+                                   m_sig2_inv,
+                                   m2_beta,
+                                   sig2_inv_beta,
+                                   m1_alpha,
+                                   sum_var_alpha,
+                                   alpha_o,
+                                   beta_o,
+                                   m_log_o,
+                                   m_log_one_minus_o,
+                                   E1,
+                                   S,
+                                   lambda,
+                                   v0,
+                                   v1,
+                                   n0,
+                                   t02,
+                                   a_tau,
+                                   b_tau,
+                                   a_sigma,
+                                   b_sigma,
+                                   a_o,
+                                   b_o,
+                                   N,
+                                   P,
+                                   vbc)
 
-    ELBO_M_diff <- abs(  ELBO_M -   ELBO_M_old)
+    ELBO_CM_diff <- abs(  ELBO_CM -   ELBO_CM_old)
 
-    if (debug &&   ELBO_M + eps <   ELBO_M0) {
+    if (debug &&   ELBO_CM + eps <   ELBO_CM0) {
 
-      warning(paste0("Non-increasing in the M-step :   ELBO_0 = ",   ELBO_M0, ",   ELBO = ",   ELBO_M))
+      warning(paste0("Non-increasing in the CM-step :   ELBO_0 = ",   ELBO_CM0, ",   ELBO = ",   ELBO_CM))
       n_warning <- n_warning + 1
 
     }
 
     if (verbose & it %% 5 == 0)
       cat(paste0(
-        "Difference ELBO_M from previous iteration: ",
-        format(ELBO_M_diff),
+        "Difference ELBO_CM from previous iteration: ",
+        format(ELBO_CM_diff),
         "\n"
       ))
 
-    ELBO_M_old <- ELBO_M
+    ELBO_CM_old <- ELBO_CM
 
     if (debug) {
-      vec_ELBO_M <- c(vec_ELBO_M, ELBO_M)
+      vec_ELBO_CM <- c(vec_ELBO_CM, ELBO_CM)
     }
   }
 
 
-  if(ELBO_M_diff <= tol){
+  if(ELBO_CM_diff <= tol){
     if(verbose)
       cat(paste0("Convergence obtained after ", format(it), " iterations. \n",
                  "Optimal marginal log-likelihood variational lower bound ",
-                 "(ELBO) = ", format(ELBO_M), ". \n\n"))
+                 "(ELBO) = ", format(ELBO_CM), ". \n\n"))
   }
 
   if (it == maxit) {
@@ -680,7 +680,7 @@ gmss_vbem_core  <- function(Y,
     debugs <- list( n_warning = n_warning,
                     vec_n_warning_VB = vec_n_warning_VB,
                     list_ELBO = list_ELBO,
-                    vec_ELBO_M = vec_ELBO_M)
+                    vec_ELBO_CM = vec_ELBO_CM)
 
   }else{
 

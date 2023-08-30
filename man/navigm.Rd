@@ -2,13 +2,13 @@
 % Please edit documentation in R/navigm.R
 \name{navigm}
 \alias{navigm}
-\title{Node-level auxiliary variable for improved Gaussian spike-and-slab with model selection.}
+\title{Node-level auxiliary variable for improved Gaussian graphical spike-and-slab model with automatic selection of spike variances.}
 \usage{
 navigm(
   Y,
   V = NULL,
   method = "GMSS",
-  inference = "VBEM",
+  inference = "VBECM",
   criterion = "AIC",
   list_hyper = NULL,
   list_init = NULL,
@@ -24,137 +24,158 @@ navigm(
 )
 }
 \arguments{
-\item{Y}{Data matrix of dimension N x P, where N is the number of samples and P is the number of nodes in the graph.
-\code{Y} will be centred within \code{navigm_core} call.}
+\item{Y}{Data matrix of dimensions N x P, where N is the number of samples and P is the number of nodes in the graph.
+\code{Y} will be centered within the \code{navigm_core} call.}
 
-\item{V}{Input matrix of dimension P x Q, where Q is the number of candidate auxiliary variables. No need to supply intercept.
-If \code{V} is not specified, set \code{method = 'GM'}.}
+\item{V}{Input matrix of dimensions P x Q, where Q is the number of candidate auxiliary variables.
+There's no need to supply an intercept.
+If \code{V = NULL} or is not specified, the default approach "GMSS" cannot be employed (see the argument \code{method}) and thus set \code{method = 'GM'}.}
 
-\item{method}{Character: the method to use, including
+\item{method}{Character: The method to use, which includes
 "GM" (vanilla spike-and-slab graphical model),
 "GMN" (spike-and-slab graphical model with normal priors on the node-level auxiliary variable coefficients), and
 "GMSS" (default; spike-and-slab graphical model with spike-and-slab priors on the node-level auxiliary variable coefficients).}
 
-\item{inference}{Character: the inference algorithm to use, including
-"EM" (expectation maximisation algorithm),
-"VBEM" (default; variational Bayes expectation maximisation algorithm),}
+\item{inference}{Character: The inference algorithm to use, which includes
+"ECM" (expectation conditional maximisation algorithm),
+"VBECM" (default; variational Bayes expectation conditional maximisation algorithm).}
 
-\item{criterion}{Character: the model selection criterion to use, including
-'AIC' (default), 'BIC' and 'EBIC'.}
+\item{criterion}{Character: The model selection criterion to use, which includes
+"AIC" (default; Akaike information criterion),
+"BIC" (Bayesian information criterion),
+and "EBIC" (extended Bayesian information criterion).}
 
 \item{list_hyper}{A list containing the model hyperparameters:
-  always specify \code{lambda}, \code{v0}, \code{v1}, \code{a_tau} and \code{b_tau} in all the models.
-  In GM (version 1), need additional \code{a_rho} and \code{b_rho}.
-  In GM (version 2), need additional \code{n0} and \code{t02}.
-  In GMN, need additional \code{n0}, \code{t02}, \code{a_sigma} and \code{b_sigma}.
-  In GMSS-VBEM, need additional \code{n0}, \code{t02}, \code{a_sigma} and \code{b_sigma}.
-  In GMSS-EM, need additional \code{s0}, \code{s1}, \code{n0}, \code{t02}, \code{a_sigma} and \code{b_sigma}.
-  Parameter interpretations: (1) \code{lambda}: a rate parameter of exponential priors on diagonal entries.
-  (2) \code{v0} and \code{v1}: unscaled spike and slab variances in the bottom-level continuous spike-and-slab.
-  (3) \code{a_tau} and \code{b_tau}: shape and rate parameters of a gamma prior on the continuous spike-and-slab unscaled prercision.
-  (4) \code{a_rho} and \code{b_rho}: shape parameters of a beta prior on edge inclusion probabilities.
-  (5) \code{n0} and \code{t02}: mean and variance of a normal prior on the overall sparsity.
-  (6) \code{a_sigma} and  \code{b_sigma}: shape parameters of a gamma prior on (slab) precision.
-  (7) \code{a_o} and \code{b_o}: shape parameters of a beta prior on node-level variable inclusion probabilities.
-  (8) \code{s0} and \code{s1}: unscaled spike and slab variances in the top-level continuous spike-and-slab.
-
-  if NULL or any hyperparameter specification is missing,
-  set to the default, \code{lambda = 2, v0 = 0.1, v1 = 100, a_tau = b_tau = a_sigma = b_sigma = 2},
-  \code{n0 = -2, t02 = 0.5, a_o = 1, b_o = Q, a_rho = 1, b_rho = P}.}
+Always specify \code{lambda}, \code{v0_v}, \code{v1}, \code{a_tau}, and \code{b_tau} in all the models.
+In GM (version 1), you need additional \code{a_rho} and \code{b_rho}.
+In GM (version 2), you need additional \code{n0} and \code{t02}.
+In GMN, you need additional \code{n0}, \code{t02}, \code{a_sigma}, and \code{b_sigma}.
+In GMSS-VBECM, you need additional \code{n0}, \code{t02}, \code{a_sigma}, and \code{b_sigma}, \code{a_o}, and \code{b_o}.
+In GMSS-ECM, you need additional \code{s0_v}, \code{s1}, \code{n0}, \code{t02}, \code{a_sigma}, \code{b_sigma}, \code{a_o}, and \code{b_o}.
+Parameter interpretations:
+(1) \code{lambda}: a rate parameter of exponential priors on diagonal entries.
+(2) \code{v0_v} and \code{v1}: a grid of unscaled spike variances and an unscaled slab variance in the bottom-level continuous spike-and-slab.
+(3) \code{a_tau} and \code{b_tau}: shape and rate parameters of a gamma prior on the bottom-level continuous spike-and-slab scale.
+(4) \code{a_rho} and \code{b_rho}: shape parameters of a beta prior on the probabilities of including edges.
+(5) \code{n0} and \code{t02}: mean and variance of a normal prior on the overall sparsity.
+(6) \code{a_sigma} and  \code{b_sigma}: shape parameters of a gamma prior on the scale of the top-level continuous spike-and-slab (GMSS-ECM),
+or on the top-level slab precision (GMSS-VBECM), or on the regression coefficients' precision (GMN).
+(7) \code{a_o} and \code{b_o}: shape parameters of a beta prior on the probabilities of including node-level variables.
+(8) \code{s0_v} and \code{s1}: a grid of unscaled spike variances and an unscaled slab variance in the top-level continuous spike-and-slab.
+If NULL or any hyperparameter specification is missing,
+they will be set to the default: \code{lambda = 2, v0_v = s0_v = seq(1e-4,  1, length.out = 16), v1 = s1 = 100},
+\code{a_tau = b_tau = a_sigma = b_sigma = 2},
+\code{n0 = -2, t02 = 0.5, a_o = 1, b_o = Q, a_rho = 1, b_rho = P}.}
 
 \item{list_init}{A list containing the initialisations:
- specify \code{Omega} in all the models. In EM, specify \code{tau_1}. In VBEM, specify \code{alpha_tau} and \code{beta_tau}.
- In GM (version 1), need \code{alpha_rho} and \code{beta_rho} using VBEM, and \code{rho} using EM.
- In GM (version 2), need \code{mu_zeta} and \code{sig2_inv_zeta} using VBEM, and \code{zeta} using EM.
- In GMN, need additional \code{mu_zeta}, \code{sig2_inv_zeta}, \code{mu_beta}, \code{sig2_inv_beta}, \code{alpha_sigma}, and \code{beta_sigma} using VBEM, and \code{zeta}, \code{beta} and \code{tau2} using EM.
- In GMSS, need additional \code{alpha_o}, \code{beta_o}, \code{mu_zeta}, \code{sig2_inv_zeta}, \code{mu_beta}, \code{sig2_inv_beta}, \code{alpha_sigma},
- and \code{beta_sigma} using VBEM, and \code{zeta}, \code{beta}, \code{o} and \code{tau2} using EM.
+ Specify \code{Omega} in all the models. In ECM, specify \code{tau_1}. In VBECM, specify \code{alpha_tau} and \code{beta_tau}.
+ In GM (version 1), you need \code{alpha_rho} and \code{beta_rho} using VBECM, and \code{rho} using ECM.
+ In GM (version 2), you need \code{mu_zeta} and \code{sig2_inv_zeta} using VBECM, and \code{zeta} using ECM.
+ In GMN, you need additional \code{mu_zeta}, \code{sig2_inv_zeta}, \code{mu_beta}, \code{sig2_inv_beta}, \code{alpha_sigma}, and \code{beta_sigma} using VBECM,
+ and \code{zeta}, \code{beta}, and \code{tau2} using ECM.
+ In GMSS, you need additional \code{mu_zeta}, \code{sig2_inv_zeta}, \code{mu_beta}, \code{sig2_inv_beta},
+ \code{alpha_o}, \code{beta_o}, \code{alpha_sigma} and \code{beta_sigma} using VBECM,
+ and \code{zeta}, \code{beta}, \code{o}, and \code{tau2} using ECM.
 
   Parameter interpretations:
-  (1) \code{alpha_tau} and \code{beta_tau}: shape and rate parameters of a gamma variational distribution on the continuous spike-and-slab prercision scale.
-  (2) \code{alpha_rho} and \code{beta_rho}: shape parameters of a beta variational distribution on edge inclusion probabilities.
-  (3) \code{mu_zeta} and \code{sig2_inv_zeta}: mean and inverse variance of a normal variational distribution on the overall sparsity.
-  (4) \code{mu_beta} and \code{sig2_inv_beta}: mean and inverse variance of a normal variational distribution on the Q regression coefficients.
-  (5) \code{alpha_sigma} and  \code{beta_sigma}: shape parameters of a gamma variational distribution on (slab) precision.
-  (6) \code{alpha_o} and \code{beta_o}: shape parameters of a beta variational distribution on node-level variable inclusion probabilities.
-  (7) \code{tau_1}: the bottom-level continuous spike-and-slab precision scale.
-  (8) \code{zeta}: the overall sparsity.
-  (9) \code{beta}: Q regression coefficients.
-  (10) \code{tau_2}: the top-level continuous spike-and-slab precision scale.
-  (11) \code{o}: node-level variable inclusion probability.
-  (12) \code{Omega}: P x P precision matrix.
- if \code{NULL} or any initialisation specification is missing,
- set to default, \code{mu_beta = rep(0,Q)}, \code{sig2_inv_beta = rep(1,Q)},
+  (1) \code{Omega}: a P x P precision matrix.
+  VBECM:
+  (2) \code{alpha_tau} and \code{beta_tau}: shape and rate parameters of a gamma variational distribution on the bottom-level continuous spike-and-slab scale.
+  (3) \code{alpha_rho} and \code{beta_rho}: shape parameters of a beta variational distribution on edge inclusion probabilities.
+  (4) \code{mu_zeta} and \code{sig2_inv_zeta}: mean and inverse variance of a normal variational distribution on the overall sparsity.
+  (5) \code{mu_beta} and \code{sig2_inv_beta}: mean and inverse variance of a normal variational distribution on regression coefficients.
+  (6) \code{alpha_sigma} and \code{beta_sigma}: shape and rate parameters of a gamma variational distribution on the top-level continuous spike-and-slab scale (GMSS-ECM),
+  or on the top-level slab precision (GMSS-VBECM), or on the regression coefficients' precision (GMN).
+  (7) \code{alpha_o} and \code{beta_o}: shape parameters of a beta variational distribution on node-level variable inclusion probabilities.
+  Parameter interpretations (ECM):
+  (2) \code{tau_1}: the bottom-level continuous spike-and-slab scale.
+  (3) \code{rho}: an edge variable inclusion probability.
+  (4) \code{zeta}: the overall sparsity.
+  (5) \code{beta}: regression coefficients.
+  (6) \code{tau_2}: the top-level continuous spike-and-slab scale (GMSS-ECM), or the top-level slab precision (GMSS-VBECM), or the regression coefficients' precision (GMN).
+  (7) \code{o}: a node-level variable inclusion probability.
+
+ If \code{NULL} or any initialization specification is missing,
+ they will be set to the default:
+ \code{Omega = } the empirical precision matrix.
+ VBECM:
+ \code{mu_beta = rep(0, Q)}, \code{sig2_inv_beta = rep(1, Q)},
  \code{alpha_tau = beta_tau = alpha_sigma = beta_sigma = 1}, \code{mu_zeta = list_hyper$n0},
  \code{sig2_inv_zeta = 1/list_hyper$t02}, \code{a_o = 1, b_o = Q},  \code{a_rho = 1, b_rho = P},
- \code{beta = rep(0,Q)}, \code{tau_1 = tau_2 = 1}, \code{zeta = list_hyper$n0}, \code{o = 1 / Q}, \code{rho = 1 / P}.}
+ ECM:
+ \code{beta = rep(0, Q)}, \code{tau_1 = tau_2 = 1}, \code{zeta = list_hyper$n0}, \code{o = 1 / Q}, \code{rho = 1 / P}.}
 
-\item{ne0}{Vector of length 2 whose entries are the prior expectation and variance of
-the number of edges in absence of hubs. Will not be used if \code{n0} in \code{list_hyper} is non-\code{NULL}.}
+\item{ne0}{A vector of length 2 containing the prior expectation and variance of
+the number of edges in the absence of hubs. This will not be used if the \code{n0} in \code{list_hyper} is non-\code{NULL}.}
 
-\item{tol}{Scalar: tolerance for the stopping criterion (default is 0.1).}
+\item{tol}{Scalar: tolerance for the stopping criterion (default is 0.001).}
 
-\item{maxit}{Scalar: maximum number of iterations allowed (default is 1000).}
+\item{maxit}{Scalar: maximum number of allowed iterations (default is 100,000).}
 
-\item{transformV}{Logical; if \code{FALSE} (default), \code{V} will not be transformed;
-Otherwise and if \code{V} does not range within [0,1],  \code{V} will be standardised within \code{navigm} call.}
+\item{transformV}{Logical: if \code{FALSE} (default), \code{V} will not be transformed;
+Otherwise, if \code{V} does not range within [0,1], \code{V} will be standardised within the \code{navigm} call.}
 
-\item{verbose}{Logical; if \code{TRUE} (default), standard verbosity; otherwise, no messages.}
+\item{verbose}{Logical: if \code{TRUE} (default), standard verbosity; otherwise, no messages.}
 
-\item{debug}{Logical; if \code{FALSE} (default), not record additional terms for the purpose of debugging;
-otherwise, record the number of decreasing ELBOs in the maximisation step (EM, VBEM) and within each variational update (VBEM),
-possibly due to numerical round-off; track ELBOs after the maximisation step (EM, VBEM) and within each variational update (VBEM).}
+\item{debug}{Logical: if \code{FALSE} (default), additional terms will not be recorded for debugging purposes;
+otherwise, the number of decreasing ELBOs in the maximisation step (ECM, VBECM) and within each variational update (VBECM) will be recorded,
+possibly due to numerical round-off. The ELBOs will be tracked after the maximisation step (ECM, VBECM) and within each variational update (VBECM).}
 
-\item{version}{Integer; take values of 1 (a beta prior on edge inclusion probabilities) or 2 (a normal prior on probit edge inclusion probabilities).
-(a valid option when \code{method = 'GM'}).}
+\item{version}{Integer: it takes values of 1 (indicating a beta prior on edge inclusion probabilities)
+or 2 (indicating a normal prior on probit edge inclusion probabilities).
+This option is only valid when \code{method = 'GM'}).}
 
-\item{full_output}{Logical; if \code{FALSE}, only return final estimates of model parameters.
-Otherwise, return estimates for all the explored models.}
+\item{full_output}{Logical: if \code{FALSE}, only model parameter estimates under the selected spike-and-slab configuration will be returned.
+Otherwise, estimates for all the explored configurations will be returned.}
 
-\item{numCores}{number of cores for the parallel computation. The default is to use all the available cores in the machine.}
+\item{numCores}{Integer: number of cores for parallel computation. The default is to use all available cores on the machine.}
 }
 \value{
 A list containing the following quantities:
- \describe{
- \item{estimates}{A list containing model estimates:
- \code{Omega} in all the models.
- In VBEM, \code{a_tau, b_tau}, \code{m_delta}. In EM, \code{tau_1}, \code{P1}.
- In GM (version 1), \code{a_rho, b_rho} using VBEM, \code{rho} using EM.
- In GM (version 2), \code{mu_zeta, sig2_inv_zeta} using VBEM, \code{zeta} using EM.
- In GMN, \code{mu_zeta, sig2_inv_zeta}, \code{mu_beta, sig2_inv_beta}, \code{a_sigma, b_sigma} using VBEM. \code{zeta}, \code{beta}, \code{tau2} using EM.
- In GMSS, \code{mu_zeta, sig2_inv_zeta}, \code{mu_beta, sig2_inv_beta}, \code{a_o, b_o}, \code{a_sigma, b_sigma}using VBEM. \code{zeta}, \code{beta}, \code{o}, \code{tau2} using EM.
- All the parameter interpretations are in Arguments section \code{list_init}, except that
- \code{m_delta, P1} refer to a P x P matrix containing posterior probabilities of including edges, and
- \code{m_gamma, P2} refer to Q posterior probabilities of including auxiliary variables.
+\describe{
+\item{estimates}{A list containing model estimates in the model with selected spike variance:
+\code{Omega} in all the models. In VBECM, \code{a_tau, b_tau}, \code{m_delta}. In ECM, \code{tau_1}, \code{P1}.
+In GM-VBECM (version 1), \code{a_rho, b_rho}. In GM-ECM (version 1), \code{rho}.
+In GM-VBECM (version 2), \code{mu_zeta, sig2_inv_zeta} In GM-ECM (version 2), \code{zeta}.
+In GMN-VBECM, \code{mu_zeta, sig2_inv_zeta}, \code{mu_beta, sig2_inv_beta}, \code{a_sigma, b_sigma}.
+In GMN-ECM, \code{zeta}, \code{beta}, \code{tau2}.
+In GMSS-VBECM, \code{mu_zeta, sig2_inv_zeta}, \code{mu_beta, sig2_inv_beta}, \code{a_o, b_o}, \code{a_sigma, b_sigma}.
+In GMSS-ECM, \code{zeta}, \code{beta}, \code{o}, \code{tau2}.
+See \code{list_init} for parameter interpretations, except that
+\code{m_delta, P1} refer to a P x P matrix containing posterior probabilities of including edges, and
+\code{m_gamma, P2} refer to a vector of length Q containing posterior probabilities of including auxiliary variables.
 
 }
- \item{debugs}{A list containing terms for the purpose of debugging:
- In VBEM, return \code{n_warning}, \code{vec_n_warning_VB}, \code{list_ELBO}, \code{vec_ELBO_M}. In EM, return \code{n_warning}, \code{vec_ELBO_M}.
- The meaning of these quantities:
- (1) \code{n_warning}: Scalar. Number of ELBO drops in the maximisation step.
- (2) \code{vec_n_warning_VB}: Vector of length \code{it}. Number of ELBO drops within each variational update.
- (3) \code{vec_ELBO_M}: Vector of length \code{it}. Track ELBO after the maximisation step.
- (4) \code{list_ELBO}: List of length \code{it}. Track ELBO within each variational update.  }
-\item{it}{Scalar. Total number of iterations. }
-\item{vec_VB_it}{Vector of length \code{it}. Number of iterations within each variational update.}
-\item{pt}{Scalar. Algorithm runtime in seconds. }
-\item{args}{A list containing the input arguments in the final selected model.}
-\item{full_outputs}{A list contains the outputs from \code{navigm_core} for all the explored models.}
-\item{index}{Index (or indices for GMSS-EM) of the selected spike variance.}
-\item{vec_criterion}{A list contains the model seletion criterion used and its evaluations on a grid of spike variances. }
-\item{total_pt}{Total algorithm runtime in seconds. }
+\item{debugs}{A list containing terms for the purpose of debugging in the model with selected spike variance:
+In VBECM, \code{n_warning}, \code{vec_n_warning_VB}, \code{list_ELBO}, \code{vec_ELBO_CM}.
+In ECM, \code{n_warning}, \code{vec_ELBO_CM}.
+Interpretations:
+(1) \code{n_warning}: a scalar showing the number of objective function drops in the conditional maximisation step.
+(2) \code{vec_n_warning_VB}: a vector of length \code{it} showing the number of objective function drops within each variational step.
+(3) \code{vec_ELBO_CM}: a vector of length \code{it} that tracks objective functions after each conditional maximisation step.
+(4) \code{list_ELBO}: a list of length \code{it} of which each tracks objective function within each variational step.}
+\item{it}{Scalar: total number of iterations in the model with selected spike variance. }
+\item{vec_VB_it}{A vector of length \code{it} containing the number of iterations within each variational step in the model with selected spike variance.}
+\item{pt}{Scalar: algorithm runtime (seconds) in the model with selected spike variance. }
+\item{args}{A list containing the inputs to the model with selected spike variance.}
+\item{index}{Integer(s): an index (or indices in GMSS-ECM) for the selected spike variance.}
+\item{vec_criterion}{A vector of length ``length(v0_v)`` (or a matrix of dimensions ``length(v0_v)`` X ``length(s0_v)`` in the GMSS-ECM)
+containing the evaluations of the model selection criterion on a grid (or two grids) of spike variances.}
+\item{total_pt}{Scalar: total algorithm runtime (seconds). }
+\item{full_outputs}{A list containing the outputs from \code{navigm_core} for all the explored models. It is non-``NULL`` if ``full_output = T``.}
 }
 }
 \description{
-This function performs simultaneous inference of Gaussian spike-and-slab and node-level auxiliary variable.
-The graph-level continuous spike-and-slab priors require the exploration of a grid of spike variances and model selections.
+This function conducts simultaneous inference of a Gaussian graphical spike-and-slab model and
+the effects of node-level auxiliary variables.
+The function also enables the automatic selection of spike variance from a grid of candidates.
 }
 \details{
-\code{navigm} implements a Gaussian graphical model
-  that allows incorporating and selecting node-level auxiliary variables,
-  thereby enhancing the detection of conditional dependence. Inference is
-  carried out using a scalable (variational) expectation maximisation
-  algorithm, which is applicable to high-dimension graphs.
+The \code{navigm} function implements a Gaussian graphical spike-and-slab model
+that enables the incorporation and selection of node-level auxiliary variables,
+thereby enhancing the detection of conditional dependence. Inference is
+conducted using a scalable (variational) expectation maximisation
+algorithm, making it suitable for high-dimensional graphs and exploration of multiple spike variances.
 }
 \examples{
 # simulate data
@@ -164,14 +185,15 @@ N <- 100; P <- 5; Q <- 3
 V <- matrix(rnorm(P*Q), nrow = P, ncol = Q)
 Y <- matrix(rnorm(N*P), nrow = N, ncol = P)
 
-# estimate precision matrix based on Y and meanwhile leverage node-level variables V
+# estimate a precision matrix based on Y and effects of node-level variables V at the same time.
+
 res_navigm <- navigm(Y, V, numCores = 2)
 # res_navigm <- navigm(Y, V, method = 'GMN')
 # res_navigm <- navigm(Y, V, method = 'GM', version = 1)
 # res_navigm <- navigm(Y, V, method = 'GM', version = 2)
-# res_navigm <- navigm(Y, V, inference = 'EM')
-# res_navigm <- navigm(Y, V, method = 'GMN', inference = 'EM')
-# res_navigm <- navigm(Y, V, method = 'GM', inference = 'EM', version = 1)
-# res_navigm <- navigm(Y, V, method = 'GM', inference = 'EM', version = 2)
+# res_navigm <- navigm(Y, V, inference = 'ECM')
+# res_navigm <- navigm(Y, V, method = 'GMN', inference = 'ECM')
+# res_navigm <- navigm(Y, V, method = 'GM', inference = 'ECM', version = 1)
+# res_navigm <- navigm(Y, V, method = 'GM', inference = 'ECM', version = 2)
 
 }

@@ -1,3 +1,8 @@
+# This file is part of the `navigm` R package:
+#     https://github.com/XiaoyueXI/navigm
+#
+# Internal functions gathering the updates for the core ECM algorithms.
+
 #############
 
 ## E-steps ##
@@ -106,11 +111,11 @@ get_E5 <- function(P2, s0, s1) {
 
 }
 
-#############
+##############
 
-## M-steps ##
+## CM-steps ##
 
-#############
+##############
 
 get_o <- function(P2, a_o, b_o) {
 
@@ -170,11 +175,11 @@ get_beta <- function(beta,
 
 
 
-####################
+#####################
 
-## M-steps in GMN ##
+## CM-steps in GMN ##
 
-####################
+#####################
 
 get_tau2_gmn <- function(beta, a_sigma, b_sigma, Q) {
 
@@ -208,11 +213,11 @@ get_beta_gmn <- function(beta,
 
 }
 
-###################
+####################
 
-## M-steps in GM ##
+## CM-steps in GM ##
 
-###################
+####################
 get_rho <- function(P1, a_rho, b_rho) {
 
   bool_up <- upper.tri(P1)

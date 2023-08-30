@@ -2,21 +2,27 @@
 % Please edit documentation in R/fun_summary.R
 \name{plot_network}
 \alias{plot_network}
-\title{Plot network.}
+\title{Plot a graph.}
 \usage{
 plot_network(x, cex = 0.5, node_names = NULL, vertex.color = "yellow", ...)
 }
 \arguments{
-\item{x}{A adjacency matrix.}
+\item{x}{An adjacency matrix.}
 
-\item{cex}{Scalar. The amount by which vertex label sizes should be magnified relative to the default.}
+\item{cex}{Scalar: the factor by which vertex label sizes should be enlarged relative to the default size.}
 
-\item{node_names}{A vector of same length as the number of rows & columns of \code{x} contains vertex names.}
+\item{node_names}{A vector of the same length as the number of rows and columns of \code{x}, containing vertex names.}
 
-\item{vertex.color}{Character. Color of vertices, e.g. \code{vertex.color = "yellow"}  (default).}
+\item{vertex.color}{Character: vertex color, for example, \code{vertex.color = "yellow"} (default).}
 
-\item{...}{other plotting arguments. Full details see \code{igraph::plot}.}
+\item{...}{Other plotting arguments. For complete details, refer to \code{igraph::plot}.}
 }
 \description{
-This function plots the undirected and unweighted networks based on an adjacency matrix (applicable to small networks).
+This function generates plots of undirected and unweighted networks based on an adjacency matrix.
+This visualisation is suitable for small networks.
+}
+\examples{
+A <- matrix(0, 5, 5); A[1,2] <- A[2,1] <- A[2,5] <- A[5,2] <- 1;
+plot_network(A)
+
 }

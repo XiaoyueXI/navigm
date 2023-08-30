@@ -1,19 +1,19 @@
 # This file is part of the `navigm` R package:
 #     https://github.com/XiaoyueXI/navigm
 #
-# Internal functions to call the EM algorithm for GM
+# Internal functions to call the ECM algorithm for GM
 
 
 #' @importFrom matrixcalc is.symmetric.matrix is.positive.definite
 #' @importFrom Matrix nearPD
-gm_em_core <-  function(Y,
-                        list_hyper = NULL,
-                        list_init = NULL,
-                        tol = 1e-1,
-                        maxit = 1e3,
-                        verbose = T,
-                        debug = F,
-                        version = 1) {
+gm_ecm_core <-  function(Y,
+                         list_hyper = NULL,
+                         list_init = NULL,
+                         tol = 1e-1,
+                         maxit = 1e3,
+                         verbose = T,
+                         debug = F,
+                         version = 1) {
 
 
   # Disabled options
@@ -204,7 +204,7 @@ gm_em_core <-  function(Y,
     # record number of warnings
     n_warning <- 0
     # track ELBO
-    vec_ELBO_M <- c()
+    vec_ELBO_CM <- c()
 
   }
 
@@ -249,7 +249,7 @@ gm_em_core <-  function(Y,
     E1 <- get_E1(P1, v0, v1)
 
 
-    # M step :
+    # CM step :
     # ====== #
 
     if (isTRUE(all.equal(c, 1))) {
@@ -257,46 +257,46 @@ gm_em_core <-  function(Y,
       if (debug == T) {
 
         if(version == 1){
-          ELBO0 <-  get_elbo_gm_em_v1(Omega,
-                                      rho,
+          ELBO0 <-  get_elbo_gm_ecm_v1(Omega,
+                                       rho,
+                                       tau1,
+                                       P1,
+                                       E1,
+                                       S,
+                                       lambda,
+                                       v0,
+                                       v1,
+                                       a_rho,
+                                       b_rho,
+                                       a_tau,
+                                       b_tau,
+                                       N,
+                                       P)
+        }else if(version == 2){
+
+          ELBO0 <- get_elbo_gm_ecm_v2(Omega,
+                                      zeta,
                                       tau1,
                                       P1,
                                       E1,
+                                      E2,
+                                      E2_2,
                                       S,
                                       lambda,
                                       v0,
                                       v1,
-                                      a_rho,
-                                      b_rho,
+                                      n0,
+                                      t02,
                                       a_tau,
                                       b_tau,
                                       N,
                                       P)
-        }else if(version == 2){
-
-          ELBO0 <- get_elbo_gm_em_v2(Omega,
-                                     zeta,
-                                     tau1,
-                                     P1,
-                                     E1,
-                                     E2,
-                                     E2_2,
-                                     S,
-                                     lambda,
-                                     v0,
-                                     v1,
-                                     n0,
-                                     t02,
-                                     a_tau,
-                                     b_tau,
-                                     N,
-                                     P)
         }
 
       }
     }
 
-    # save order as VBEM
+    # save order as VBECM
     #
     tau1 <- get_tau1(Omega, E1, a_tau, b_tau, P)
     if(version == 1){
@@ -328,48 +328,48 @@ gm_em_core <-  function(Y,
     #
     if (isTRUE(all.equal(c, 1))) {
       if(version == 1){
-        ELBO <-  get_elbo_gm_em_v1(Omega,
-                                   rho,
+        ELBO <-  get_elbo_gm_ecm_v1(Omega,
+                                    rho,
+                                    tau1,
+                                    P1,
+                                    E1,
+                                    S,
+                                    lambda,
+                                    v0,
+                                    v1,
+                                    a_rho,
+                                    b_rho,
+                                    a_tau,
+                                    b_tau,
+                                    N,
+                                    P)
+      }else if(version == 2){
+        ELBO <- get_elbo_gm_ecm_v2(Omega,
+                                   zeta,
                                    tau1,
                                    P1,
                                    E1,
+                                   E2,
+                                   E2_2,
                                    S,
                                    lambda,
                                    v0,
                                    v1,
-                                   a_rho,
-                                   b_rho,
+                                   n0,
+                                   t02,
                                    a_tau,
                                    b_tau,
                                    N,
                                    P)
-      }else if(version == 2){
-        ELBO <- get_elbo_gm_em_v2(Omega,
-                                  zeta,
-                                  tau1,
-                                  P1,
-                                  E1,
-                                  E2,
-                                  E2_2,
-                                  S,
-                                  lambda,
-                                  v0,
-                                  v1,
-                                  n0,
-                                  t02,
-                                  a_tau,
-                                  b_tau,
-                                  N,
-                                  P)
       }
 
 
       ELBO_diff <- abs(ELBO - ELBO_old)
 
       if (debug == T && ELBO + eps < ELBO0) {
-        # not a check for the whole iteration as the M-step will increase ELBO, but the E-step may decrease it
+        # not a check for the whole iteration as the CM-step will increase ELBO, but the E-step may decrease it
         #
-        warning(paste0("Non-increasing in the M-step : ELBO0 = ", ELBO0, ", ELBO = ", ELBO))
+        warning(paste0("Non-increasing in the CM-step : ELBO0 = ", ELBO0, ", ELBO = ", ELBO))
         n_warning <- n_warning + 1
       }
 
@@ -383,7 +383,7 @@ gm_em_core <-  function(Y,
       ELBO_old <- ELBO
 
       if (debug) {
-        vec_ELBO_M <- c(vec_ELBO_M, ELBO)
+        vec_ELBO_CM <- c(vec_ELBO_CM, ELBO)
       }
     }
   }
@@ -391,7 +391,7 @@ gm_em_core <-  function(Y,
   if(ELBO_diff <= tol){
     if(verbose)
       cat(paste0("Convergence obtained after ", format(it), " iterations. \n",
-                 "Optimal objective function in the EM ",
+                 "Optimal objective function in the ECM ",
                  "(Q) = ", format(ELBO), ". \n\n"))
   }
 
@@ -428,7 +428,7 @@ gm_em_core <-  function(Y,
 
   if(debug){
     debugs <- list( n_warning = n_warning,
-                    vec_ELBO_M = vec_ELBO_M)
+                    vec_ELBO_CM = vec_ELBO_CM)
   }else{
     debugs <- NA
   }

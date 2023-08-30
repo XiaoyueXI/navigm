@@ -2,23 +2,28 @@
 % Please edit documentation in R/fun_summary.R
 \name{plot_roc}
 \alias{plot_roc}
-\title{Plot truncated receiver operating characteristic curves.}
+\title{Plot pROC curve with 95\% confidence interval.}
 \usage{
 plot_roc(ppi, pat, fpr_stop = 1, nci = 11, ...)
 }
 \arguments{
-\item{ppi}{A vector of continuous prediction scores such as posterior inclusion probability or a list of such vectors.}
+\item{ppi}{A vector of continuous prediction scores, such as posterior inclusion probability, or a list containing such vectors.}
 
-\item{pat}{A vector of binary true outcomes or a list of such vectors.}
+\item{pat}{A vector of binary true outcomes, or a list containing such vectors.}
 
-\item{fpr_stop}{Scalar. False positive rate at which the ROC curve is truncated.}
+\item{fpr_stop}{Scalar: false positive rate at which the ROC curve is truncated.}
 
-\item{nci}{number of confidence bars if \code{ppi} and \code{pat} are lists.}
+\item{nci}{Number of confidence bars. The 95\% confidence interval is only displayed if \code{ppi} and \code{pat} are lists.}
 
-\item{...}{other plotting arguments, such as \code{col}, \code{add}. Full details see \code{ROCR::plot}.}
+\item{...}{Other plotting arguments, such as \code{col} and \code{add}. For full details, please refer to \code{ROCR::plot}.}
 }
 \description{
-This function plots the truncated receiver operating characteristic (ROC) curves at
-the false positive rate \code{fpr_stop}. ROC curves describe the
-performance of a classification model at all classification thresholds.
+This function plots an average receiver operating characteristic (ROC) curve with 95% confidence interval.
+A partial ROC (pROC) curve can be specified with the argument \code{fpr_stop}.
+}
+\examples{
+set.seed(123); pat <- sample(c(0,1), 10, replace = TRUE)
+ppi <- sapply(pat,function(x){if(x==0){runif(1,0,0.1)}else{runif(1,0.9,1)}})
+plot_roc(ppi, pat)
+
 }

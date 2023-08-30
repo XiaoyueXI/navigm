@@ -13,7 +13,7 @@ Q <- 10
 Q0 <- 1
 
 #
-V <- generate_V(P, Q, alpha = 0.05, beta = 0.2, Sigma = diag(Q), min_gene = 1)
+V <- simulate_auxiliary_matrix(P, Q, alpha = 0.05, beta = 0.2, Sigma = diag(Q), min_gene = 1)
 
 #
 beta0 <- 0.5
@@ -32,28 +32,28 @@ A <- 0 + (pe >= 0.5)
 diag(A) <- 0
 
 #
-net <-  generate_data_from_adjancency(N = N, A = A)
+net <-  simulate_data_from_adjacency_matrix(N = N, A = A)
 
 ########################
 ## navigm inference ##
 ########################
 
 
-gmss_vbem <- navigm(net$Y, V, numCores = 2,
+gmss_vbecm <- navigm(net$Y, V, numCores = 2,
                     list_hyper = list(v0_v = seq(1e-4, 1, length.out = 16)))
-gmn_vbem <- navigm(net$Y, V, method = 'GMN', numCores = 2,
+gmn_vbecm <- navigm(net$Y, V, method = 'GMN', numCores = 2,
                    list_hyper = list(v0_v = seq(1e-4, 1, length.out = 16)))
-gm_v1_vbem <- navigm(net$Y, V, method = 'GM', version = 1, numCores = 2,
+gm_v1_vbecm <- navigm(net$Y, V, method = 'GM', version = 1, numCores = 2,
                      list_hyper = list(v0_v = seq(1e-4, 1, length.out = 16)))
-gm_v2_vbem <- navigm(net$Y, V, method = 'GM', version = 2, numCores = 2,
+gm_v2_vbecm <- navigm(net$Y, V, method = 'GM', version = 2, numCores = 2,
                      list_hyper = list(v0_v = seq(1e-4, 1, length.out = 16)))
 
-gmss_em <- navigm(net$Y, V, inference = 'EM',numCores = 2,
+gmss_ecm <- navigm(net$Y, V, inference = 'ECM',numCores = 2,
                   list_hyper = list(v0_v = seq(1e-4, 1, length.out = 16)))
-gmn_em <- navigm(net$Y, V, method = 'GMN', inference = 'EM', numCores = 2,
+gmn_ecm <- navigm(net$Y, V, method = 'GMN', inference = 'ECM', numCores = 2,
                  list_hyper = list(v0_v = seq(1e-4, 1, length.out = 16)))
-gm_v1_em <- navigm(net$Y, V, method = 'GM', version = 1, inference = 'EM', numCores = 2,
+gm_v1_ecm <- navigm(net$Y, V, method = 'GM', version = 1, inference = 'ECM', numCores = 2,
                    list_hyper = list(v0_v = seq(1e-4, 1, length.out = 16)))
-gm_v2_em <- navigm(net$Y, V, method = 'GM', version = 2, inference = 'EM', numCores = 2,
+gm_v2_ecm <- navigm(net$Y, V, method = 'GM', version = 2, inference = 'ECM', numCores = 2,
                    list_hyper = list(v0_v = seq(1e-4, 1, length.out = 16)))
 

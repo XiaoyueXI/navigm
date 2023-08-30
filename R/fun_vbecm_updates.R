@@ -1,7 +1,7 @@
 # This file is part of the `navigm` R package:
 #     https://github.com/XiaoyueXI/navigm
 #
-# Internal functions gathering the updates for the core algorithms.
+# Internal functions gathering the updates for VBE steps in the core VBECM algorithms.
 
 ####################
 
@@ -55,11 +55,11 @@ update_mu_zeta_gm <-
     c * (sum(m_z[bool_up]) + n0 / t02) / sig2_inv_zeta
   }
 
-####################
+#####################
 
 ## sigma's updates ##
 
-####################
+#####################
 
 update_alpha_sigma <- function(m_gamma, a_sigma, c = 1) {
   c * (effective_sum(m_gamma) / 2 + a_sigma -1) + 1
@@ -78,11 +78,11 @@ get_m_log_sig2_inv <- function(alpha_sigma, beta_sigma) {
   digamma(alpha_sigma + eps) - log(beta_sigma + eps)
 }
 
-####################
+#################
 
 ## o's updates ##
 
-####################
+#################
 
 update_alpha_o <- function(m_gamma, a_o, c = 1) {
   # c * (m_gamma + a_o - 1) + 1
@@ -107,11 +107,11 @@ get_m_log_one_minus_o <- function(alpha_o, beta_o) {
   digamma(beta_o + eps) - digamma(alpha_o + beta_o + eps)
 }
 
-####################
+#####################
 
 ## gamma's updates ##
 
-####################
+#####################
 
 update_m_gamma <-
   function(m_log_o,
@@ -178,11 +178,11 @@ get_m2_beta <- function(mu_beta, sig2_inv_beta, m_gamma) {
 }
 
 
-####################
+#####################
 
 ## delta's updates ##
 
-####################
+#####################
 
 update_m_delta <- function(Omega, m_tau, m1_alpha, v0, v1, c=1) {
 
@@ -230,11 +230,11 @@ get_omega <- function(E1, S, Omega, lambda, N, P) {
 }
 
 
-#######################################################
+#########################################################
 
-## delta's updates in GM with beta prior on edge PIPs ##
+## delta's updates in GM with beta priors on edge PPIs ##
 
-#######################################################
+#########################################################
 
 update_m_delta_betap <- function(Omega, m_tau, m_log_rho, m_log_one_minus_rho, v0, v1, c=1) {
 
@@ -247,11 +247,11 @@ update_m_delta_betap <- function(Omega, m_tau, m_log_rho, m_log_one_minus_rho, v
 
 }
 
-######################################################
+#######################################################
 
-## rho's updates in GM with beta prior on edge PIPs ##
+## rho's updates in GM with beta priors on edge PPIs ##
 
-######################################################
+#######################################################
 
 update_alpha_rho <- function(m_delta, a_rho, c = 1){
   c * (effective_sum(m_delta[upper.tri(m_delta)]) + a_rho - 1) + 1

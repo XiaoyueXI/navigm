@@ -1,19 +1,20 @@
 # This file is part of the `navigm` R package:
 #     https://github.com/XiaoyueXI/navigm
 #
-# Internal functions to call the EM algorithm for GMN
+# Internal functions to call the ECM algorithm for GMSS
 
 
 #' @importFrom matrixcalc is.symmetric.matrix is.positive.definite
 #' @importFrom Matrix nearPD
-gmn_em_core <-  function(Y,
-                         V = NULL,
-                         list_hyper = NULL,
-                         list_init = NULL,
-                         tol = 1e-1,
-                         maxit = 1e3,
-                         verbose = T,
-                         debug = F) {
+gmss_ecm_core <-  function(Y,
+                           V,
+                           list_hyper = NULL,
+                           list_init = NULL,
+                           tol = 1e-1,
+                           maxit = 1e3,
+                           verbose = T,
+                           debug = F) {
+
 
   # Disabled options
   #
@@ -72,6 +73,14 @@ gmn_em_core <-  function(Y,
   if(list_hyper$v1 <= 0)stop("v1 must be positive.")
   if(list_hyper$v0 >= list_hyper$v1)stop("v1 should be much greater than v0.")
 
+  list_hyper <- set_default(list_hyper, 's0', 0.1)
+  if(list_hyper$s0 <= 0)stop("s0 must be positive.")
+
+  list_hyper <- set_default(list_hyper, 's1', 100)
+  if(list_hyper$s1 <= 0)stop("s1 must be positive.")
+  if(list_hyper$s0 >= list_hyper$s1)stop("s1 should be much greater than s0.")
+
+
   list_hyper <- set_default(list_hyper, 'a_tau', 2)
   if(list_hyper$a_tau <= 0)stop("a_tau must be positive.")
 
@@ -89,17 +98,27 @@ gmn_em_core <-  function(Y,
   list_hyper <- set_default(list_hyper, 't02', 0.5)
   if(list_hyper$t02 <= 0)stop("t02 must be positive.")
 
+  list_hyper <- set_default(list_hyper, 'a_o', 1)
+  if(list_hyper$a_o <= 0)stop("a_o must be positive.")
+
+  list_hyper <- set_default(list_hyper, 'b_o', Q)
+  if(list_hyper$b_o <= 0)stop("b_o must be positive.")
+
   # list2env(list_hyper, envir = .GlobalEnv)
   #
   lambda <- list_hyper$lambda
   v0 <- list_hyper$v0
   v1 <- list_hyper$v1
+  s0 <- list_hyper$s0
+  s1 <- list_hyper$s1
   a_tau <- list_hyper$a_tau
   b_tau <- list_hyper$b_tau
   a_sigma <- list_hyper$a_sigma
   b_sigma <- list_hyper$b_sigma
   n0 <- list_hyper$n0
   t02 <- list_hyper$t02
+  a_o <- list_hyper$a_o
+  b_o <- list_hyper$b_o
   #
 
   if (verbose) cat("... done. == \n\n")
@@ -108,6 +127,7 @@ gmn_em_core <-  function(Y,
 
   # Specify initial parameters unless provided
   #
+
   # if(!is.null(list_init))list2env(list_init, envir = .GlobalEnv)
 
   if (!'Omega' %in% names(list_init) | ('Omega' %in% names(list_init) & is.null(list_init$Omega))) {
@@ -151,7 +171,7 @@ gmn_em_core <-  function(Y,
 
   }else{
 
-    if(list_init$tau1 <= 0){
+    if( list_init$tau1 <= 0){
       stop("tau1 must be positive.")
     }
 
@@ -169,12 +189,25 @@ gmn_em_core <-  function(Y,
 
   }
 
+  if (!'o' %in% names(list_init) | ('o' %in% names(list_init) & is.null(list_init$o))) {
+
+    list_init$o <- 1/Q
+
+  }else{
+
+    if( list_init$o < 0 | list_init$o > 1){
+      stop("o must be in [0,1].")
+    }
+
+  }
+
   #
   Omega <- list_init$Omega
   beta <- list_init$beta
   zeta <- list_init$zeta
   tau1 <- list_init$tau1
   tau2 <- list_init$tau2
+  o <- list_init$o
   #
 
   if (verbose) cat("... done. == \n\n")
@@ -186,13 +219,13 @@ gmn_em_core <-  function(Y,
     # record number of warnings
     n_warning <- 0
     # track elbo
-    vec_ELBO_M <- c()
+    vec_ELBO_CM <- c()
 
   }
 
   # Pre-compute
   #
-  sV <- list_upper_tri_matrix_sum_Viq_Vjq(V, P, Q)
+  sV <- list_upper_tri_matrix_sum_Viq_Vjq(V , P, Q)
   pV <- list_upper_tri_matrix_prod_Viq_Vjq(V, P, Q)
   spV1 <- list_vec_sum_prod_Viq_Vinq(V, P, Q)
   spV2 <- list_vec_sum_prod_Viq_Vjnq_prod_Vinq_Vjq(V, P, Q)
@@ -230,57 +263,57 @@ gmn_em_core <-  function(Y,
     theta <- get_theta(beta, V)
     Alpha <- get_Alpha(theta, zeta, P)
     P1 <- get_P1(Omega, Alpha, tau1, v0, v1, c)
+    P2 <- get_P2(beta, o, tau2, s0, s1, c)
     E1 <- get_E1(P1, v0, v1)
     E2 <- get_E2(P1, Alpha, c)
     E2_2 <- get_E2_2(E2, Alpha, c)
+    E5 <- get_E5(P2, s0, s1)
 
-    # M step :
+    # CM step :
     # ====== #
 
     if (isTRUE(all.equal(c, 1))) {
       if (debug == T) {
-        ELBO0 <- get_elbo_gmn_em(Omega,
-                                 zeta,
-                                 beta,
-                                 tau1,
-                                 tau2,
-                                 P1,
-                                 E1,
-                                 E2,
-                                 E2_2,
-                                 S,
-                                 V,
-                                 lambda,
-                                 v0,
-                                 v1,
-                                 n0,
-                                 t02,
-                                 a_tau,
-                                 b_tau,
-                                 a_sigma,
-                                 b_sigma,
-                                 N,
-                                 P,
-                                 Q)
+        ELBO0 <- get_elbo_gmss_ecm(Omega,
+                                   zeta,
+                                   beta,
+                                   o,
+                                   tau1,
+                                   tau2,
+                                   P1,
+                                   P2,
+                                   E1,
+                                   E2,
+                                   E2_2,
+                                   E5,
+                                   S,
+                                   V,
+                                   lambda,
+                                   v0,
+                                   v1,
+                                   s0,
+                                   s1,
+                                   n0,
+                                   t02,
+                                   a_tau,
+                                   b_tau,
+                                   a_sigma,
+                                   b_sigma,
+                                   a_o,
+                                   b_o,
+                                   N,
+                                   P,
+                                   Q)
       }
     }
 
-    # save order as VBEM
+    # save order as VBECM
     #
+    o <- get_o(P2, a_o, b_o)
     tau1 <- get_tau1(Omega, E1, a_tau, b_tau, P)
-    tau2 <- get_tau2_gmn(beta, a_sigma, b_sigma, Q)
+    tau2 <- get_tau2(beta, E5, a_sigma, b_sigma, Q)
     zeta <- get_zeta(E2, theta, n0, t02, P)
-    beta <- get_beta_gmn(beta,
-                         zeta,
-                         tau2,
-                         E2,
-                         V,
-                         sV,
-                         pV,
-                         spV1,
-                         spV2,
-                         P,
-                         Q)
+    beta <- get_beta(beta, zeta, tau2, E2, E5, V, sV, pV, spV1, spV2, P, Q)
 
 
     # omega
@@ -304,36 +337,43 @@ gmn_em_core <-  function(Y,
 
     #
     if (isTRUE(all.equal(c, 1))) {
-      ELBO <- get_elbo_gmn_em(Omega,
-                              zeta,
-                              beta,
-                              tau1,
-                              tau2,
-                              P1,
-                              E1,
-                              E2,
-                              E2_2,
-                              S,
-                              V,
-                              lambda,
-                              v0,
-                              v1,
-                              n0,
-                              t02,
-                              a_tau,
-                              b_tau,
-                              a_sigma,
-                              b_sigma,
-                              N,
-                              P,
-                              Q)
+      ELBO <- get_elbo_gmss_ecm(Omega,
+                                zeta,
+                                beta,
+                                o,
+                                tau1,
+                                tau2,
+                                P1,
+                                P2,
+                                E1,
+                                E2,
+                                E2_2,
+                                E5,
+                                S,
+                                V,
+                                lambda,
+                                v0,
+                                v1,
+                                s0,
+                                s1,
+                                n0,
+                                t02,
+                                a_tau,
+                                b_tau,
+                                a_sigma,
+                                b_sigma,
+                                a_o,
+                                b_o,
+                                N,
+                                P,
+                                Q)
 
       ELBO_diff <- abs(ELBO - ELBO_old)
 
       if (debug == T && ELBO + eps < ELBO0) {
-        # not a check for the whole iteration as the M-step will increase ELBO, but the E-step may decrease it
+        # not a check for the whole iteration as the CM-step will increase ELBO, but the E-step may decrease it
         #
-        warning(paste0("Non-increasing in the M-step : ELBO0 = ", ELBO0, ", ELBO = ", ELBO))
+        warning(paste0("Non-increasing in the CM-step : ELBO0 = ", ELBO0, ", ELBO = ", ELBO))
         n_warning <- n_warning + 1
       }
 
@@ -347,7 +387,7 @@ gmn_em_core <-  function(Y,
       ELBO_old <- ELBO
 
       if (debug) {
-        vec_ELBO_M <- c(vec_ELBO_M, ELBO)
+        vec_ELBO_CM <- c(vec_ELBO_CM, ELBO)
       }
     }
   }
@@ -355,7 +395,7 @@ gmn_em_core <-  function(Y,
   if(ELBO_diff <= tol){
     if(verbose)
       cat(paste0("Convergence obtained after ", format(it), " iterations. \n",
-                 "Optimal objective function in the EM ",
+                 "Optimal objective function in the ECM ",
                  "(Q) = ", format(ELBO), ". \n\n"))
   }
 
@@ -366,22 +406,26 @@ gmn_em_core <-  function(Y,
   pt <- Sys.time() - pt
   cat('Algorithm runtime: ',format(pt), '\n')
 
+
   estimates <- list(Omega = Omega,
                     zeta = zeta,
                     beta = beta,
+                    o = o,
                     tau1 = tau1,
                     tau2 = tau2,
                     P1 = P1,
+                    P2 = P2,
                     E1 = E1,
                     E2 = E2,
                     E2_2 = E2_2,
+                    E5 = E5,
                     S = S # for model comparison
   )
 
 
   if(debug){
     debugs <- list( n_warning = n_warning,
-                    vec_ELBO_M = vec_ELBO_M)
+                    vec_ELBO_CM = vec_ELBO_CM)
   }else{
     debugs <- NA
   }

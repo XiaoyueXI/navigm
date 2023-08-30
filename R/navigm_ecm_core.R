@@ -2,7 +2,7 @@
 #     https://github.com/XiaoyueXI/navigm
 
 
-navigm_em_core <- function(Y, V =NULL,
+navigm_ecm_core <- function(Y, V =NULL,
                             method = 'GMSS',
                             list_hyper = NULL,
                             list_init = NULL,
@@ -21,14 +21,14 @@ navigm_em_core <- function(Y, V =NULL,
                "== GM: spike-and-slab graphical model == \n",
                "======================================== \n\n"))
 
-    ans <- gm_em_core(Y = Y,
-                      list_hyper = list_hyper,
-                      list_init =  list_init,
-                      tol = tol,
-                      maxit = maxit,
-                      verbose = verbose,
-                      debug = debug,
-                      version = version)
+    ans <- gm_ecm_core(Y = Y,
+                       list_hyper = list_hyper,
+                       list_init =  list_init,
+                       tol = tol,
+                       maxit = maxit,
+                       verbose = verbose,
+                       debug = debug,
+                       version = version)
 
   }else if(method == 'GMN'){
 
@@ -39,14 +39,14 @@ navigm_em_core <- function(Y, V =NULL,
                "== GMN: spike-and-slab graphical model with normal priors for the node-level auxiliary variable coefficients == \n",
                "============================================================================================================== \n\n"))
 
-    ans <- gmn_em_core(Y = Y ,
-                       V = V,
-                       list_hyper = list_hyper,
-                       list_init =  list_init,
-                       tol = tol,
-                       maxit = maxit,
-                       verbose = verbose,
-                       debug = debug)
+    ans <- gmn_ecm_core(Y = Y ,
+                        V = V,
+                        list_hyper = list_hyper,
+                        list_init =  list_init,
+                        tol = tol,
+                        maxit = maxit,
+                        verbose = verbose,
+                        debug = debug)
 
 
   }else if(method == 'GMSS'){
@@ -58,14 +58,14 @@ navigm_em_core <- function(Y, V =NULL,
                "== GMSS: spike-and-slab graphical model with spike-and-slab priors for the node-level auxiliary variable coefficients == \n",
                "====================================================================================================================== \n\n"))
 
-    ans <- gmss_em_core(Y = Y,
-                        V = V,
-                        list_hyper = list_hyper,
-                        list_init =  list_init,
-                        tol = tol,
-                        maxit = maxit,
-                        verbose = verbose,
-                        debug = debug)
+    ans <- gmss_ecm_core(Y = Y,
+                         V = V,
+                         list_hyper = list_hyper,
+                         list_init =  list_init,
+                         tol = tol,
+                         maxit = maxit,
+                         verbose = verbose,
+                         debug = debug)
 
   }
 

@@ -2,7 +2,7 @@
 % Please edit documentation in R/fun_summary.R
 \name{plot_ppi}
 \alias{plot_ppi}
-\title{Plot variable-specific quantities such as effect sizes and PPIs.}
+\title{Plot auxiliary-variable-associated quantities.}
 \usage{
 plot_ppi(
   ppi,
@@ -15,21 +15,26 @@ plot_ppi(
 )
 }
 \arguments{
-\item{ppi}{A vector of the variable-specific quantities.}
+\item{ppi}{A vector of the values associated with auxiliary variables, such as effect sizes and posterior probability of inclusion.}
 
-\item{ppi_names}{A vector of variable names. If \code{NULL} (default), use the variable indices.}
+\item{ppi_names}{A vector of variable names. If set to \code{NULL} (default), the indices \code{1:length(ppi)} will be used.}
 
-\item{col}{A character indicating the point color or a vector of the same length of variables.}
+\item{col}{A character indicating the color of all the points, or a vector containing such characters with the same length as the variables.}
 
-\item{condition}{A vector of logical. If satisfying \code{condition == T}, draw vertical lines from points to the x-axis.}
+\item{condition}{A vector of logical values. If \code{condition == TRUE}, vertical lines will be drawn from points to the x-axis.}
 
-\item{xlab}{Character. A title for the x axis.}
+\item{xlab}{Character: a title for the x-axis (the default is "auxiliary variables").}
 
-\item{ylab}{Character. A title for the y axis.}
+\item{ylab}{Character: a title for the y axis (the default is "effect sizes").}
 
-\item{...}{other plotting arguments. See \code{base::plot}.}
+\item{...}{Other plotting arguments. Refer to \code{base::plot} for more details.}
 }
 \description{
-This function plots variable-specific quantity \code{ppi} against their indices \code{ppi_names},
-for instance posterior inclusion probabilities or effect sizes of auxiliary variables
+This function generates a scatter plot illustrating the values associated with auxiliary variables \code{ppi} against their corresponding indices \code{ppi_names}.
+}
+\examples{
+set.seed(123); pat <- sample(c(0,1), 10, replace = TRUE)
+ppi <- sapply(pat,function(x){if(x==0){runif(1,0,0.1)}else{runif(1,0.9,1)}})
+plot_ppi(ppi, ylab = 'inclusion probability')
+
 }

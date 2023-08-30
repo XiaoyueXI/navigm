@@ -2,21 +2,34 @@
 % Please edit documentation in R/fun_summary.R
 \name{AIC_GSS}
 \alias{AIC_GSS}
-\title{Evaluate the Akaike information criterion (AIC) for spike-and-slab Gaussian graphical models.}
+\title{Compute AIC for a Gaussian graphical spike-and-slab model.}
 \usage{
 AIC_GSS(estimates, N)
 }
 \arguments{
 \item{estimates}{A list of parameter estimates using the \code{navigm} function,
-which includes precision matrix (Omega), edge posterior inclusion probability (m_delta)
-and a matrix S (=Y^T Y) evaluated based on data Y.}
+which includes the precision matrix (\code{Omega}), edge posterior inclusion probability (\code{m_delta}),
+and a matrix \code{S (=Y^T Y)} evaluated based on data Y.}
 
-\item{N}{number of samples (number of rows in Y).}
+\item{N}{number of samples, i.e., number of rows in the input data matrix Y of \code{navigm}.}
 }
 \value{
-Scalar. Akaike information criterion of a spike-and-slab Gaussian graphical model on N-sample data Y.
+Scalar: Akaike information criterion for a Gaussian graphical spike-and-slab model on data with N samples.
 }
 \description{
-This function evaluates one of the model selection criteria, Akaike information criterion,
-for spike-and-slab Gaussian graphical models.
+This function evaluates one of the model selection criteria, Akaike information criterion (AIC),
+for a Gaussian graphical spike-and-slab model.
+}
+\examples{
+# simulate data
+
+seed <- 123; set.seed(seed)
+N <- 100; P <- 5; Q <- 3
+V <- matrix(rnorm(P*Q), nrow = P, ncol = Q)
+Y <- matrix(rnorm(N*P), nrow = N, ncol = P)
+
+# estimate precision matrix based on Y and meanwhile leverage node-level variables V
+ans <- navigm_core(Y, V)
+AIC_GSS(ans$estimates,N)
+
 }

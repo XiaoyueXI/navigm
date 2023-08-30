@@ -2,23 +2,30 @@
 % Please edit documentation in R/fun_summary.R
 \name{compute_pauc}
 \alias{compute_pauc}
-\title{Compute standardised area under the truncated ROC curve.}
+\title{Compute AUC.}
 \usage{
 compute_pauc(ppi, pat, fpr_stop = 1, standardise = F)
 }
 \arguments{
-\item{ppi}{A vector of continuous prediction scores such as posterior inclusion probability or a list of such vectors.}
+\item{ppi}{A vector of continuous prediction scores, such as posterior inclusion probability, or a list containing such vectors.}
 
-\item{pat}{A vector of binary true outcomes or a list of such vectors.}
+\item{pat}{A vector of binary true outcomes, or a list containing such vectors.}
 
-\item{fpr_stop}{Scalar. False positive rate at which the ROC curve is truncated.}
+\item{fpr_stop}{Scalar: false positive rate at which the ROC curve is truncated.}
 
-\item{standardise}{Logical. If FALSE (default), not apply the standardisation; otherwise, apply.}
+\item{standardise}{Logical: if set to FALSE (default), standardisation will not be applied;
+if set to TRUE, standardisation will be applied following https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3744586/.}
 }
 \value{
-A scalar measuring the classification performance.
+Scalar: (standardised partial) area under the ROC curve.
 }
 \description{
-This function compute the area under the ROC curve (AUC) truncated at
-the false positive rate \code{fpr_stop}. The AUC is a threshold-free performance measure.
+This function computes the area under the ROC curve (AUC).
+A partial AUC can be specified with the argument \code{fpr_stop}.
+}
+\examples{
+set.seed(123); pat <- sample(c(0,1), 10, replace = TRUE)
+ppi <- sapply(pat,function(x){if(x==0){runif(1,0,0.1)}else{runif(1,0.9,1)}})
+compute_pauc(ppi, pat)
+
 }

@@ -2,22 +2,28 @@
 % Please edit documentation in R/fun_summary.R
 \name{compute_perf}
 \alias{compute_perf}
-\title{Compute thresholds-based performance measures.}
+\title{Assess performance using a threshold.}
 \usage{
 compute_perf(ppi, pat, threshold = 0.5)
 }
 \arguments{
-\item{ppi}{A vector of continuous prediction scores such as posterior inclusion probability or a list of such vectors.}
+\item{ppi}{A vector of continuous prediction scores, such as posterior inclusion probability, or a list containing such vectors.}
 
-\item{pat}{A vector of binary true outcomes or a list of such vectors.}
+\item{pat}{A vector of binary true outcomes, or a list containing such vectors.}
 
-\item{threshold}{Scalar. A threshold for classification.}
+\item{threshold}{Scalar: a threshold for classifying \code{ppi}.}
 }
 \value{
-A list of thresholds-based performance measures.
+A list of performance metrics calculated using the specified threshold.
 }
 \description{
-This function compute the thresholds-based performance measures
-including true positive rate (tpr), false positive rate (fpr), true negative rate (tnr),
-false negative rate (fnr), recall, precision, F1-scores (f1).
+This function assesses estimation performance using a predefined threshold,
+including metrics such as true positive rate (TPR), false positive rate (FPR), true negative rate (TNR),
+false negative rate (FNR), recall, precision, and F1-scores (F1).
+}
+\examples{
+set.seed(123); pat <- sample(c(0,1), 10, replace = TRUE)
+ppi <- sapply(pat,function(x){if(x==0){runif(1,0,0.1)}else{runif(1,0.9,1)}})
+compute_perf(ppi, pat)
+
 }
