@@ -9,7 +9,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # navigm
 
-The `navigm` is an R package that implements a Gaussian graphical spike-and-slab model for estimating 
+`navigm` is an R package that implements a Gaussian graphical spike-and-slab model for estimating 
 associations between variables (nodes). Alongside the primary node measurements,
 this package permits the inclusion of supplementary node-level auxiliary variables. 
 This method is tailored to enhance the identification of conditional dependence

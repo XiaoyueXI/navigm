@@ -1,7 +1,7 @@
 
 # navigm
 
-The `navigm` is an R package that implements a Gaussian graphical
+`navigm` is an R package that implements a Gaussian graphical
 spike-and-slab model for estimating associations between variables
 (nodes). Alongside the primary node measurements, this package permits
 the inclusion of supplementary node-level auxiliary variables. This
