@@ -58,12 +58,13 @@ e_delta_z <- function(m_delta,
 
   - sum_var_alpha/2 +
     #
-    effective_sum(m_delta[bool_up] * stats::pnorm(sqrt(c) * m1_alpha[bool_up], log.p = T, lower.tail = T)) +
-    effective_sum((1-m_delta[bool_up]) * stats::pnorm(sqrt(c) * m1_alpha[bool_up], log.p = T, lower.tail = F)) -
+    sum(m_delta[bool_up] * stats::pnorm(sqrt(c) * m1_alpha[bool_up], log.p = T, lower.tail = T)) +
+    sum((1-m_delta[bool_up]) * stats::pnorm(sqrt(c) * m1_alpha[bool_up], log.p = T, lower.tail = F)) -
     #
-    effective_sum(m_delta[bool_up] * log(m_delta[bool_up] + eps))-
-    effective_sum((1-m_delta[bool_up]) * log(1-m_delta[bool_up] + eps))
+    sum(m_delta[bool_up] * log(m_delta[bool_up] + eps))-
+    sum((1-m_delta[bool_up]) * log(1-m_delta[bool_up] + eps))
 
+  # effective_sum not stable
 }
 
 ##########################################
@@ -121,16 +122,15 @@ e_beta_gamma <- function(m_gamma,
                          m2_beta,
                          sig2_inv_beta
 ){
-
   eps <- .Machine$double.eps
 
   effective_sum(m_gamma)/2 * m_log_sig2_inv -
-    effective_sum(m_gamma * m2_beta)/2 * m_sig2_inv +
+    sum(m_gamma * m2_beta)/2 * m_sig2_inv +
     m_log_o * effective_sum(m_gamma) +
     m_log_one_minus_o * effective_sum(1 - m_gamma)  +
-    effective_sum(m_gamma * (1 + log(2 * pi * sig2_inv_beta^(-1) + eps))/2 ) -
-    effective_sum(m_gamma * log(m_gamma + eps))-
-    effective_sum((1-m_gamma) * log(1 - m_gamma + eps))
+    sum(m_gamma * (1 + log(2 * pi * sig2_inv_beta^(-1) + eps))/2 ) -
+    sum(m_gamma * log(m_gamma + eps))-
+    sum((1-m_gamma) * log(1 - m_gamma + eps))
 
 }
 
@@ -282,8 +282,8 @@ e_beta_gmn <- function(m_gamma,
   eps <- .Machine$double.eps
 
   effective_sum(m_gamma)/2 * m_log_sig2_inv -
-    effective_sum(m_gamma * m2_beta)/2 * m_sig2_inv +
-    effective_sum(m_gamma * (1 + log(2 * pi * sig2_inv_beta^(-1) + eps))/2 )
+    sum(m_gamma * m2_beta)/2 * m_sig2_inv +
+    sum(m_gamma * (1 + log(2 * pi * sig2_inv_beta^(-1) + eps))/2 )
 
 }
 
@@ -382,8 +382,8 @@ e_delta_rho <- function(alpha_rho,
   (effective_sum(m_delta[bool_up]) + a_rho - alpha_rho) * m_log_rho +
     (effective_sum(1 - m_delta[bool_up]) + b_rho - beta_rho) * m_log_one_minus_rho +
     lbeta(alpha_rho, beta_rho) -
-    effective_sum(m_delta[bool_up] * log(m_delta[bool_up] + eps)) -
-    effective_sum((1-m_delta[bool_up]) * log(1-m_delta[bool_up] + eps))
+    sum(m_delta[bool_up] * log(m_delta[bool_up] + eps)) -
+    sum((1-m_delta[bool_up]) * log(1-m_delta[bool_up] + eps))
 
 
 }
