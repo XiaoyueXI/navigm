@@ -136,8 +136,8 @@ The standard approach estimates the conditional independence structure between n
 
 $$
 \begin{aligned}
-\mathbf{y}_1, ..., \mathbf{y}_n &\overset{\text{iid}}{\sim} \mathcal{N}_P(\mathbf{0}, \boldsymbol{\Omega}^{-1}), \quad n = 1, ..., N, \quad \boldsymbol{\Omega} \in \mathcal{M}^+,  \\
-\omega_{ij}\mid \delta_{ij}, \tau &\sim \delta_{ij}\mathcal{N}\left(0, \nu_1^2\tau^{-1}\right) + (1-\delta_{ij}) \mathcal{N}\left(0, \nu_0^2\tau^{-1}\right),\quad  \nu_0 \ll \nu_1,\quad 1 \leq i<j \leq P,\\
+\mathbf{y}_1, ..., \mathbf{y}_n &\overset{\text{iid}}{\sim} \text{Normal}(\mathbf{0}, \boldsymbol{\Omega}^{-1}), \quad n = 1, ..., N, \quad \boldsymbol{\Omega} \in \mathcal{M}^+,  \\
+\omega_{ij}\mid \delta_{ij}, \tau &\sim \delta_{ij}\text{Normal}\left(0, \nu_1^2\tau^{-1}\right) + (1-\delta_{ij}) \text{Normal}\left(0, \nu_0^2\tau^{-1}\right),\quad  \nu_0 \ll \nu_1,\quad 1 \leq i<j \leq P,\\
 \omega_{ii}  &\sim \mathrm{Exp}\left({\lambda/2}\right), \quad i = 1, \ldots, P,\\
 \delta_{ij} \mid \rho &\sim \text{Bernoulli}(\rho_{ij}),\\
 \tau &\sim \text{Gamma}(a_\tau, b_\tau),
@@ -149,8 +149,8 @@ Subsequently, we establish the impact of node-level auxiliary variables on the e
 $$
 \begin{aligned}
 \rho_{ij} &= \Phi\left(\zeta + \sum_{q=1}^Q V_{iq}\beta_q + \sum_{q=1}^Q V_{jq} \beta_q\right), \\
-\beta_q \mid \gamma_q, \sigma^2 &\sim  \gamma_{q}\mathcal{N}(0,\sigma^2) + (1-\gamma_{q}) \delta(\beta_q) , \quad q=1,\ldots, Q, \quad \gamma_q\mid o \sim \text{Bernoulli}(o), \quad \\
-\zeta &\sim \mathcal{N}(n_0, t_0^2), \quad \sigma^{-2} \sim \text{Gamma}(a_\sigma, b_\sigma), \quad o \sim  \text{Beta}(a_o, b_o),
+\beta_q \mid \gamma_q, \sigma^2 &\sim  \gamma_{q}\text{Normal}(0,\sigma^2) + (1-\gamma_{q}) \delta(\beta_q) , \quad q=1,\ldots, Q, \quad \gamma_q\mid o \sim \text{Bernoulli}(o), \quad \\
+\zeta &\sim \text{Normal}(n_0, t_0^2), \quad \sigma^{-2} \sim \text{Gamma}(a_\sigma, b_\sigma), \quad o \sim  \text{Beta}(a_o, b_o),
 \end{aligned}
 $$
 where $\Phi(\cdot)$ is the standard normal cumulative distribution function, $n_0, t_0^2$ are hyperparameters to induce graph sparsity, $a_o, b_o$ are hyperparameters to induce auxiliary variable sparsity, and $a_\sigma, b_\sigma$ are hyperparameters on slab variances. While the package provides default choices for these hyperparameters, users retain the flexibility to modify them. For more comprehensive insights and explanations on hyperparameters, please consult our paper.
@@ -271,7 +271,7 @@ A graphical spike-and-slab model with normal priors on auxiliary variable coeffi
 
 $$
 \begin{aligned}
-\beta_q \mid \sigma^2 &\sim  \mathcal{N}(0,\sigma^2) , \quad q=1,\ldots, Q,\\ 
+\beta_q \mid \sigma^2 &\sim \text{Normal}(0,\sigma^2) , \quad q=1,\ldots, Q,\\ 
 \sigma^{-2} & \sim \text{Gamma}(a_\sigma, b_\sigma),
 \end{aligned}
 $$
@@ -293,7 +293,7 @@ Two prior choices are available on $\rho$,
 
 * ``version = 1``: $$\rho \sim \text{Beta}(a_\rho, b_\rho), $$ i.e., the same as  [EMGS](https://www.tandfonline.com/doi/full/10.1080/10618600.2019.1609976).
 
-* ``version = 2``: $$\Phi(\rho) \sim \mathcal{N}(n_0, t_0^2), $$ which is more comparable with our extensions. 
+* ``version = 2``: $$\Phi(\rho) \sim \text{Normal}(n_0, t_0^2), $$ which is more comparable with our extensions. 
 
 
 The following estimates parameters in *GM* with a beta prior on edge inclusion by VBECM: 

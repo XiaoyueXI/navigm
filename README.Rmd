@@ -6,37 +6,34 @@ output: github_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-
 # navigm
 
-`navigm` is an R package that implements a Gaussian graphical spike-and-slab model for estimating 
-associations between variables (nodes). Alongside the primary node measurements,
-this package permits the inclusion of supplementary node-level auxiliary variables. 
-This method is tailored to enhance the identification of conditional dependence
-structure by leveraging these variables and selecting useful information from them. 
-Employing a scalable variational Bayes expectation conditional maximisation algorithm,
-the package attains the posterior mode of the precision matrix that pinpoints the conditional dependence between nodes,
-along with approximated posterior distributions of the remaining model parameters.
+`navigm` is an R package that implements variable-guided network inference 
+using Bayesian graphical spike-and-slab modelling. Alongside the primary 
+node measurements, our framework encodes node-level auxiliary variables 
+that may be informative on the network structure. For instance, gene network 
+inference may be informed by the use of publicly available summary statistics 
+on the regulation of genes by genetic variants. 
 
-The package offers a variety of modelling options,
-including the decision to integrate node-level variables as well as the flexibility to select influential variables. 
-Furthermore, it provides an alternative deterministic
-inference algorithm, full expectation conditional maximisation, which
-has been widely used in previous studies.
+Our approach relies on a fully joint hierarchical model to simultaneously 
+infer (i) sparse precision matrices and (ii) the relevance of node-level 
+information for uncovering the sought-after network structure. Inference 
+is carried out using an efficient variational expectation conditional 
+maximisation algorithm that scales to hundreds of samples, nodes and 
+auxiliary variables, and approximates full posterior distributions for 
+parameters of interest.
 
-Reference: Xiaoyue Xi, Helene Ruffieux, 2023. A hierarchical framework
-for inferring and leveraging node-level information in Bayesian
-networks.
-  
+Reference: Xiaoyue Xi, Hélène Ruffieux, 2023. A modelling framework
+for detecting and leveraging node-level information in Bayesian network 
+inference.
 
 ## Installation
-The package can be installed in R by
-```{r install, eval=F}
+
+The package can be installed in R using the following command:
+
+``` r
 if(!require(remotes)) install.packages("remotes")
 remotes::install_github("XiaoyueXI/navigm")
 ```
 
-For further instructions, please check the (tutorial)[link].
-
-
-
+For further instructions, please check the (tutorial)\[link\].
