@@ -30,6 +30,11 @@
 #' @export
 AIC_GSS <- function(estimates, N){
 
+  stopifnot('P1'%in% names(estimates) | 'm_delta'%in% names(estimates))
+  if('P1'%in% names(estimates)){
+    estimates$m_delta <- estimates$P1
+  }
+
   Omega <- estimates$Omega
   Omega[estimates$m_delta <= 0.5] <- 0
   diag(Omega) <- diag(estimates$Omega)
@@ -66,6 +71,11 @@ AIC_GSS <- function(estimates, N){
 #'
 #' @export
 BIC_GSS <- function(estimates, N){
+
+  stopifnot('P1'%in% names(estimates) | 'm_delta'%in% names(estimates))
+  if('P1'%in% names(estimates)){
+    estimates$m_delta <- estimates$P1
+  }
 
   Omega <- estimates$Omega
   Omega[estimates$m_delta <= 0.5] <- 0
@@ -107,6 +117,11 @@ BIC_GSS <- function(estimates, N){
 #'
 #' @export
 EBIC_GSS <- function(estimates, N, gamma =0.5){
+
+  stopifnot('P1'%in% names(estimates) | 'm_delta'%in% names(estimates))
+  if('P1'%in% names(estimates)){
+    estimates$m_delta <- estimates$P1
+  }
 
   Omega <- estimates$Omega
   Omega[estimates$m_delta <= 0.5] <- 0
