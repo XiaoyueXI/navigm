@@ -35,8 +35,8 @@ e_omega <- function(Omega,
   bool_up <- upper.tri(Omega)
 
   - lambda * sum(diag(Omega)) / 2 -
-    log(v1) * effective_sum(m_delta[bool_up]) -
-    log(v0) * effective_sum(1-m_delta[bool_up]) -
+    log(v1) * sum(m_delta[bool_up]) -
+    log(v0) * sum(1-m_delta[bool_up]) -
     m_tau * sum(Omega[bool_up]^2 * E1[bool_up])/2 +
     m_log_tau * P * (P-1)/4
 
@@ -124,10 +124,10 @@ e_beta_gamma <- function(m_gamma,
 ){
   eps <- .Machine$double.eps
 
-  effective_sum(m_gamma)/2 * m_log_sig2_inv -
+  sum(m_gamma)/2 * m_log_sig2_inv -
     sum(m_gamma * m2_beta)/2 * m_sig2_inv +
-    m_log_o * effective_sum(m_gamma) +
-    m_log_one_minus_o * effective_sum(1 - m_gamma)  +
+    m_log_o * sum(m_gamma) +
+    m_log_one_minus_o * sum(1 - m_gamma)  +
     sum(m_gamma * (1 + log(2 * pi * sig2_inv_beta^(-1) + eps))/2 ) -
     sum(m_gamma * log(m_gamma + eps))-
     sum((1-m_gamma) * log(1 - m_gamma + eps))
@@ -281,7 +281,7 @@ e_beta_gmn <- function(m_gamma,
 
   eps <- .Machine$double.eps
 
-  effective_sum(m_gamma)/2 * m_log_sig2_inv -
+  sum(m_gamma)/2 * m_log_sig2_inv -
     sum(m_gamma * m2_beta)/2 * m_sig2_inv +
     sum(m_gamma * (1 + log(2 * pi * sig2_inv_beta^(-1) + eps))/2 )
 
@@ -379,8 +379,8 @@ e_delta_rho <- function(alpha_rho,
   eps <- .Machine$double.eps
   bool_up <- upper.tri(m_delta)
 
-  (effective_sum(m_delta[bool_up]) + a_rho - alpha_rho) * m_log_rho +
-    (effective_sum(1 - m_delta[bool_up]) + b_rho - beta_rho) * m_log_one_minus_rho +
+  (sum(m_delta[bool_up]) + a_rho - alpha_rho) * m_log_rho +
+    (sum(1 - m_delta[bool_up]) + b_rho - beta_rho) * m_log_one_minus_rho +
     lbeta(alpha_rho, beta_rho) -
     sum(m_delta[bool_up] * log(m_delta[bool_up] + eps)) -
     sum((1-m_delta[bool_up]) * log(1-m_delta[bool_up] + eps))
