@@ -36,4 +36,4 @@ if(!require(remotes)) install.packages("remotes")
 remotes::install_github("XiaoyueXI/navigm")
 ```
 
-For further instructions, please check the (tutorial)\[link\].
+For further instructions, please check the (tutorial)[https://xiaoyuexi.github.io/navigm.github.io/].
