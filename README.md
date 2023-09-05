@@ -31,4 +31,4 @@ remotes::install_github("XiaoyueXI/navigm")
 ```
 
 For further instructions, please check the
-(tutorial)\[<https://xiaoyuexi.github.io/navigm.github.io/>\].
+[tutorial](https://xiaoyuexi.github.io/navigm.github.io/).
