@@ -139,9 +139,9 @@ gm_vbecm_core  <- function(Y,
 
     if(nrow(list_init$Omega)!=ncol(list_init$Omega)){
       stop("Omega should be initialised as a square matrix")
-    }else if(matrixcalc::is.symmetric.matrix(list_init$Omega)){
+    }else if(!matrixcalc::is.symmetric.matrix(list_init$Omega)){
       stop("Omega should be initialised as a symmetric matrix")
-    }else if(matrixcalc::is.positive.definite(list_init$Omega)){
+    }else if(!matrixcalc::is.positive.definite(list_init$Omega)){
       stop("Omega should be initialised as a positive definite matrix")
     }
 

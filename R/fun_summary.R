@@ -153,7 +153,7 @@ EBIC_GSS <- function(estimates, N, gamma =0.5){
 #'
 #' @import ROCR
 #' @export
-plot_roc <- function(ppi, pat, fpr_stop = 1, nci = 11, ...) {
+plot_roc <- function(ppi, pat, fpr_stop = 1, nci = 11, spread.scale = 2, ...) {
 
   pred <- ROCR::prediction(ppi,pat)
   perf <- ROCR::performance(pred, measure = "tpr", x.measure = "fpr")
@@ -164,7 +164,7 @@ plot_roc <- function(ppi, pat, fpr_stop = 1, nci = 11, ...) {
        ylim = c(0, 1),
        avg= "vertical",
        spread.estimate="stderror",
-       spread.scale = 2,
+       spread.scale = spread.scale,
        show.spread.at = seq(0,fpr_stop,length.out= nci),
        ...)
 

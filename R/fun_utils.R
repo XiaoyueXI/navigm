@@ -358,20 +358,37 @@ simulate_auxiliary_matrix <- function(P, Q,
                                       alpha = 0.05, beta = 0.2,
                                       Sigma = diag(Q),
                                       min_gene = round(0.05 * P),
-                                      verbose = F) {
+                                      verbose = F,
+                                      empirical = T) {
+  # #
+  # if(P < Q){
+  #   warning('P < Q, set empirical = F. May not be comparable with those simulated under empirical = T.\n')
+  #   Z <- MASS::mvrnorm(n = P,
+  #                      mu = rep(0, nrow(Sigma)),
+  #                      Sigma)
   #
-  if(P < Q){
-    warning('P < Q, set empirical = F. May not be comparable with those simulated under empirical = T.\n')
-    Z <- MASS::mvrnorm(n = P,
-                       mu = rep(0, nrow(Sigma)),
-                       Sigma)
-
-  }else{
+  # }else{
     Z <- MASS::mvrnorm(n = P,
                        mu = rep(0, nrow(Sigma)),
                        Sigma,
-                       empirical = T)
-  }
+                       empirical = empirical)
+  # }
+
+  # set.seed(1234)
+  # Z1 <- MASS::mvrnorm(n = P,
+  #                    mu = rep(0, nrow(Sigma)),
+  #                    Sigma)
+  #
+  # set.seed(1234)
+  # Z2 <- MASS::mvrnorm(n = P,
+  #                     mu = rep(0, nrow(Sigma)),
+  #                     Sigma,
+  #                     empirical = T)
+  # bool_up <- upper.tri(Sigma)
+  # df = rbind( data.frame(value = cov(Z1)[bool_up], empirical = F),
+  #                data.frame(value = cov(Z2)[bool_up], empirical = T))
+  # ggplot(df, aes(value, color=empirical)) +
+  #   geom_density()
 
   #
   bool_up <- upper.tri(cor(Z))
