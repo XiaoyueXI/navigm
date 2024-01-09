@@ -11,7 +11,8 @@ simulate_auxiliary_matrix(
   beta = 0.2,
   Sigma = diag(Q),
   min_gene = round(0.05 * P),
-  verbose = F
+  verbose = F,
+  empirical = T
 )
 }
 \arguments{

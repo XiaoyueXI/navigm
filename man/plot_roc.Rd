@@ -4,7 +4,7 @@
 \alias{plot_roc}
 \title{Plot pROC curve with 95\% confidence interval.}
 \usage{
-plot_roc(ppi, pat, fpr_stop = 1, nci = 11, ...)
+plot_roc(ppi, pat, fpr_stop = 1, nci = 11, spread.scale = 2, ...)
 }
 \arguments{
 \item{ppi}{A vector of continuous prediction scores, such as posterior inclusion probability, or a list containing such vectors.}
