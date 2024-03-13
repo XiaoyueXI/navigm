@@ -63,7 +63,7 @@ or on the top-level slab precision (GMSS-VBECM), or on the regression coefficien
 (7) \code{a_o} and \code{b_o}: shape parameters of a beta prior on the probabilities of including node-level variables.
 (8) \code{s0_v} and \code{s1}: a grid of unscaled spike variances and an unscaled slab variance in the top-level continuous spike-and-slab.
 If NULL or any hyperparameter specification is missing,
-they will be set to the default: \code{lambda = 2, v0_v = s0_v = seq(1e-4,  1, length.out = 16), v1 = s1 = 100},
+they will be set to the default: \code{lambda = 2, v0_v = s0_v = seq(1e-2,  1, length.out = 16), v1 = s1 = 100},
 \code{a_tau = b_tau = a_sigma = b_sigma = 2},
 \code{n0 = -2, t02 = 0.5, a_o = 1, b_o = Q, a_rho = 1, b_rho = P}.}
 
