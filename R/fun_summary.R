@@ -35,13 +35,14 @@ AIC_GSS <- function(estimates, N){
     estimates$m_delta <- estimates$P1
   }
 
+  bool_up <- upper.tri(estimates$m_delta)
   Omega <- estimates$Omega
   Omega[estimates$m_delta <= 0.5] <- 0
   diag(Omega) <- diag(estimates$Omega)
 
   sum(diag(estimates$S %*% Omega)) -
     N * determinant(Omega, logarithm = TRUE)$modulus[1] +
-    2 * sum(estimates$m_delta > 0.5)
+    2 * sum(estimates$m_delta[bool_up] > 0.5)
 
 }
 
@@ -77,13 +78,14 @@ BIC_GSS <- function(estimates, N){
     estimates$m_delta <- estimates$P1
   }
 
+  bool_up <- upper.tri(estimates$m_delta)
   Omega <- estimates$Omega
   Omega[estimates$m_delta <= 0.5] <- 0
   diag(Omega) <- diag(estimates$Omega)
 
   sum(diag(estimates$S %*% Omega)) -
     N * determinant(Omega, logarithm = TRUE)$modulus[1] +
-    log(N) * sum(estimates$m_delta > 0.5)
+    log(N) * sum(estimates$m_delta[bool_up] > 0.5)
 
 }
 
@@ -123,6 +125,7 @@ EBIC_GSS <- function(estimates, N, gamma =0.5){
     estimates$m_delta <- estimates$P1
   }
 
+  bool_up <- upper.tri(estimates$m_delta)
   Omega <- estimates$Omega
   Omega[estimates$m_delta <= 0.5] <- 0
   diag(Omega) <- diag(estimates$Omega)
@@ -131,7 +134,7 @@ EBIC_GSS <- function(estimates, N, gamma =0.5){
 
   sum(diag(estimates$S %*% Omega)) -
     N * determinant(Omega, logarithm = TRUE)$modulus[1] +
-    (log(N) + 4 * gamma * log(P)) * sum(estimates$m_delta > 0.5)
+    (log(N) + 4 * gamma * log(P)) * sum(estimates$m_delta[bool_up] > 0.5)
 
 }
 
